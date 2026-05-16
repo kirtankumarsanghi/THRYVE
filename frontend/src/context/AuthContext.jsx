@@ -9,31 +9,33 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for existing session
     const storedToken = localStorage.getItem("token");
     const storedRole = localStorage.getItem("role");
-    
+    const storedUser = localStorage.getItem("user");
+
     if (storedToken && storedRole) {
       setToken(storedToken);
       setRole(storedRole);
-      // Mock user object
-      setUser({ name: "Demo User", email: "user@thryve.com", role: storedRole });
+      setUser(storedUser ? JSON.parse(storedUser) : { name: "Demo User", email: "user@thryve.com", role: storedRole });
     }
     setLoading(false);
   }, []);
 
-  const login = (role) => {
+  const login = (role, userData = null) => {
     const mockToken = "fake-jwt-token-123";
+    const resolvedUser = userData || { name: "Demo User", email: "user@thryve.com", role };
     localStorage.setItem("token", mockToken);
     localStorage.setItem("role", role);
+    localStorage.setItem("user", JSON.stringify(resolvedUser));
     setToken(mockToken);
     setRole(role);
-    setUser({ name: "Demo User", email: "user@thryve.com", role });
+    setUser(resolvedUser);
   };
 
   const logout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     setToken(null);
     setRole(null);
     setUser(null);

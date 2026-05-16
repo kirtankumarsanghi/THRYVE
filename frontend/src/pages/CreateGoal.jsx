@@ -10,7 +10,9 @@ export default function CreateGoal() {
     thrustArea: "",
     weightage: 25,
     targetDate: "",
-    metrics: ""
+    metrics: "",
+    uomType: "Min",
+    targetValue: ""
   });
 
   const handleChange = (e) => {
@@ -105,10 +107,12 @@ export default function CreateGoal() {
                   required
                 >
                   <option value="">Select an area...</option>
+                  <option value="Revenue">Revenue</option>
+                  <option value="Customer">Customer</option>
+                  <option value="People">People</option>
+                  <option value="Operations">Operations</option>
                   <option value="Innovation">Innovation</option>
-                  <option value="Operational Excellence">Operational Excellence</option>
-                  <option value="Customer Success">Customer Success</option>
-                  <option value="Team Development">Team Development</option>
+                  <option value="Compliance">Compliance</option>
                 </select>
               </div>
 
@@ -162,6 +166,42 @@ export default function CreateGoal() {
                   placeholder="e.g., Reach 10,000 MAU"
                   className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-sm text-on-surface placeholder-on-surface-variant/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all"
                   required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* UoM Type */}
+              <div>
+                <label className="block font-body-sm text-body-sm font-medium text-on-surface mb-2">
+                  UoM Type
+                </label>
+                <select
+                  name="uomType"
+                  value={formData.uomType}
+                  onChange={handleChange}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-sm text-on-surface focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all appearance-none"
+                >
+                  <option value="Min">Min (Numeric/%) — higher is better</option>
+                  <option value="Max">Max (Numeric/%) — lower is better</option>
+                  <option value="Timeline">Timeline — date-based completion</option>
+                  <option value="Zero">Zero — zero = success</option>
+                </select>
+              </div>
+
+              {/* Target Value */}
+              <div>
+                <label className="block font-body-sm text-body-sm font-medium text-on-surface mb-2">
+                  Target Value (if applicable)
+                </label>
+                <input
+                  name="targetValue"
+                  value={formData.targetValue}
+                  onChange={handleChange}
+                  type="number"
+                  placeholder="e.g., 10000"
+                  disabled={formData.uomType === 'Timeline' || formData.uomType === 'Zero'}
+                  className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-sm text-on-surface placeholder-on-surface-variant/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/50 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 />
               </div>
             </div>

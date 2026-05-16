@@ -55,7 +55,7 @@ const GoalCard = ({ goal }) => {
         <div className="flex items-center justify-between text-xs text-gray-400 mb-2">
           <div className="flex items-center gap-1.5">
             <Target className="w-3.5 h-3.5" />
-            <span>Target: {goal.target} {goal.uom}</span>
+            <span>Target: {goal.targetValue || goal.target || "N/A"} {goal.uomType || goal.uom || ""}</span>
           </div>
           <span className="font-semibold text-white">{goal.progress}%</span>
         </div>
@@ -65,7 +65,7 @@ const GoalCard = ({ goal }) => {
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-border/50 text-xs font-semibold">
           <div className="flex items-center gap-1.5 text-gray-500">
             <Calendar className="w-3.5 h-3.5" />
-            {goal.dueDate}
+            {goal.targetDate || goal.dueDate || "No Date"}
           </div>
           <div className="text-primary flex items-center gap-1 group-hover:gap-2 transition-all">
             Details <ArrowRight className="w-3.5 h-3.5" />

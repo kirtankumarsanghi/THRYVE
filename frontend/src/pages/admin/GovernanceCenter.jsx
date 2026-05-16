@@ -1,127 +1,262 @@
-import React, { useState } from 'react';
-import PageContainer from '../../components/common/PageContainer';
-import SectionHeader from '../../components/common/SectionHeader';
-import DashboardCard from '../../components/dashboard/DashboardCard';
-import { useAdmin } from '../../context/AdminContext';
-import { useGoals } from '../../context/GoalContext';
-import { Lock, Unlock, AlertTriangle, RefreshCw } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import BackButton from "../../components/common/BackButton";
+import Breadcrumb from "../../components/common/Breadcrumb";
 
 export default function GovernanceCenter() {
-  const { unlockGoal, cycles, updateCycleStatus } = useAdmin();
-  const { goals, updateGoal } = useGoals();
-  const [unlockReason, setUnlockReason] = useState('');
-  const [selectedGoal, setSelectedGoal] = useState('');
+  const [selectedGoal, setSelectedGoal] = useState("");
+  const [unlockReason, setUnlockReason] = useState("");
+
+  const lockedGoals = [
+    { id: "G-001", title: "Launch Enterprise Portal", owner: "John Doe", lockedBy: "Manager Jane" },
+    { id: "G-002", title: "Improve Customer Satisfaction", owner: "Mike Johnson", lockedBy: "Manager Sarah" },
+    { id: "G-003", title: "Revenue Growth Initiative", owner: "Lisa Anderson", lockedBy: "Manager David" },
+  ];
+
+  const cycles = [
+    { id: 1, name: "Q3 2024 Review", startDate: "2024-07-01", endDate: "2024-09-30", status: "active" },
+    { id: 2, name: "Q4 2024 Planning", startDate: "2024-10-01", endDate: "2024-12-31", status: "upcoming" },
+    { id: 3, name: "Q2 2024 Review", startDate: "2024-04-01", endDate: "2024-06-30", status: "closed" },
+  ];
+
+  const escalations = [
+    { id: 1, type: "Overdue Approval", item: "Goal #45 - Product Launch", assignee: "Manager John", daysOverdue: 5 },
+    { id: 2, type: "Missing Check-in", item: "Q3 Check-in - Sarah Williams", assignee: "Employee Sarah", daysOverdue: 3 },
+  ];
 
   const handleUnlock = () => {
-    if (!selectedGoal || !unlockReason) {
-      toast.error('Goal ID and reason are required to unlock a goal.');
+    if (!selectedGoal || !unlockReason.trim()) {
+      alert("Please select a goal and provide a reason");
       return;
     }
-    const targetGoal = goals.find(g => g.id === selectedGoal);
-    if (!targetGoal) {
-      toast.error('Goal not found in active goals list.');
-      return;
-    }
-    
-    unlockGoal(selectedGoal, unlockReason);
-    updateGoal({ ...targetGoal, locked: false });
-    setSelectedGoal('');
-    setUnlockReason('');
+    console.log("Unlocking goal:", selectedGoal, "Reason:", unlockReason);
+    setSelectedGoal("");
+    setUnlockReason("");
+  };
+
+  const handleCycleAction = (cycleId, action) => {
+    console.log(`${action} cycle ${cycleId}`);
   };
 
   return (
-    <PageContainer>
-      <SectionHeader 
-        title="Governance Center" 
-        subtitle="Manage goal locks, escalation alerts, and review cycles."
-      />
+    <main className="pt-8 px-margin-mobile md:px-margin-desktop pb-24 max-w-container-max mx-auto min-h-screen">
+      <Breadcrumb />
+      <BackButton to="/admin/dashboard" label="Back to Dashboard" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Goal Unlock System */}
-        <DashboardCard title="Goal Unlock Controls" subtitle="Override manager locks">
+      <header className="mb-10 mt-6">
+        <div className="flex items-center gap-2 text-on-surface-variant mb-2">
+          <span className="material-symbols-outlined text-error text-[20px]">gavel</span>
+          <span className="font-label-caps text-label-caps tracking-widest uppercase text-error">
+            System Governance
+          </span>
+        </div>
+        <h2 className="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">
+          Governance Center
+        </h2>
+        <p className="font-body-base text-body-base text-on-surface-variant mt-2">
+          Manage goal locks, escalation alerts, and review cycles
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Goal Unlock Controls */}
+        <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+          <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-error">lock_open</span>
+            Goal Unlock Controls
+          </h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+            Override manager locks for administrative purposes
+          </p>
+
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Goal ID</label>
-              <select 
+              <label className="font-body-sm text-[12px] text-on-surface-variant uppercase tracking-wider mb-2 block">
+                Select Locked Goal
+              </label>
+              <select
                 value={selectedGoal}
                 onChange={(e) => setSelectedGoal(e.target.value)}
-                className="w-full bg-dark border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary"
+                className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-base text-on-surface focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
               >
-                <option value="">Select a locked goal...</option>
-                {goals.filter(g => g.locked).map(g => (
-                  <option key={g.id} value={g.id}>{g.title} ({g.id})</option>
+                <option value="">Choose a goal...</option>
+                {lockedGoals.map((goal) => (
+                  <option key={goal.id} value={goal.id}>
+                    {goal.id} - {goal.title} (Owner: {goal.owner})
+                  </option>
                 ))}
               </select>
             </div>
+
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Unlock Reason (Required for Audit)</label>
-              <textarea 
+              <label className="font-body-sm text-[12px] text-on-surface-variant uppercase tracking-wider mb-2 block">
+                Unlock Reason (Required for Audit)
+                <span className="text-error ml-1">*</span>
+              </label>
+              <textarea
                 value={unlockReason}
                 onChange={(e) => setUnlockReason(e.target.value)}
-                placeholder="Reason for overriding the lock..."
-                className="w-full bg-dark border border-border rounded-lg px-4 py-2 text-white focus:outline-none focus:border-primary min-h-[80px]"
+                placeholder="Provide a detailed reason for overriding the lock..."
+                rows={4}
+                className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-base text-on-surface placeholder-on-surface-variant/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all resize-none"
               />
             </div>
-            <button 
+
+            <div className="bg-error/5 border border-error/20 rounded-lg p-4 flex gap-3">
+              <span className="material-symbols-outlined text-error text-[20px] flex-shrink-0">warning</span>
+              <div>
+                <p className="font-body-sm text-body-sm text-on-surface font-medium mb-1">
+                  Administrative Override
+                </p>
+                <p className="font-body-sm text-[12px] text-on-surface-variant">
+                  This action will be logged in the audit trail and notify the goal owner and manager.
+                </p>
+              </div>
+            </div>
+
+            <button
               onClick={handleUnlock}
-              disabled={!selectedGoal || !unlockReason}
-              className="w-full flex items-center justify-center gap-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 disabled:opacity-50 transition-all rounded-lg py-2 font-semibold"
+              disabled={!selectedGoal || !unlockReason.trim()}
+              className="w-full px-6 py-3 bg-error/10 text-error border border-error/20 hover:bg-error/20 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-title-md text-body-sm font-semibold transition-all flex items-center justify-center gap-2"
             >
-              <Unlock className="w-4 h-4" /> Force Unlock Goal
+              <span className="material-symbols-outlined text-[20px]">lock_open</span>
+              Force Unlock Goal
             </button>
           </div>
-        </DashboardCard>
+        </div>
 
         {/* Review Cycle Monitoring */}
-        <DashboardCard title="Active Review Cycles" subtitle="Manage cycle statuses">
+        <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+          <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary">event_repeat</span>
+            Active Review Cycles
+          </h3>
+          <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+            Manage cycle statuses and deadlines
+          </p>
+
           <div className="space-y-4">
-            {cycles.map(cycle => (
-              <div key={cycle.id} className="flex flex-col sm:flex-row items-center justify-between p-4 bg-dark/50 border border-border rounded-xl">
-                <div>
-                  <h4 className="text-white font-medium">{cycle.name}</h4>
-                  <p className="text-xs text-gray-400">{cycle.startDate} to {cycle.endDate}</p>
-                </div>
-                <div className="flex items-center gap-3 mt-3 sm:mt-0">
-                  <span className={`px-2 py-1 text-xs font-semibold rounded-md ${
-                    cycle.status === 'active' ? 'bg-emerald-400/10 text-emerald-400 border border-emerald-400/20' :
-                    cycle.status === 'upcoming' ? 'bg-blue-400/10 text-blue-400 border border-blue-400/20' :
-                    'bg-gray-500/10 text-gray-400 border border-gray-500/20'
+            {cycles.map((cycle) => (
+              <div
+                key={cycle.id}
+                className="p-4 rounded-lg bg-surface-container/50 border border-outline-variant/10 hover:border-outline-variant/30 transition-all"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h4 className="font-body-sm text-body-sm text-on-surface font-medium mb-1">{cycle.name}</h4>
+                    <p className="font-body-sm text-[12px] text-on-surface-variant">
+                      {cycle.startDate} to {cycle.endDate}
+                    </p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-[10px] font-label-caps uppercase tracking-wider border ${
+                    cycle.status === "active" ? "bg-secondary/20 text-secondary border-secondary/30" :
+                    cycle.status === "upcoming" ? "bg-primary/20 text-primary border-primary/30" :
+                    "bg-on-surface-variant/20 text-on-surface-variant border-on-surface-variant/30"
                   }`}>
-                    {cycle.status.toUpperCase()}
+                    {cycle.status}
                   </span>
-                  {cycle.status === 'active' && (
-                    <button 
-                      onClick={() => updateCycleStatus(cycle.id, 'closed')}
-                      className="p-1.5 bg-dark border border-border rounded-md text-amber-400 hover:bg-amber-400/10 transition-colors"
-                      title="Close Cycle"
+                </div>
+
+                <div className="flex gap-2">
+                  {cycle.status === "active" && (
+                    <>
+                      <button
+                        onClick={() => handleCycleAction(cycle.id, "extend")}
+                        className="flex-1 px-3 py-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 rounded-lg font-body-sm text-[12px] transition-all"
+                      >
+                        Extend
+                      </button>
+                      <button
+                        onClick={() => handleCycleAction(cycle.id, "close")}
+                        className="flex-1 px-3 py-2 bg-error/10 text-error border border-error/20 hover:bg-error/20 rounded-lg font-body-sm text-[12px] transition-all"
+                      >
+                        Close
+                      </button>
+                    </>
+                  )}
+                  {cycle.status === "closed" && (
+                    <button
+                      onClick={() => handleCycleAction(cycle.id, "reopen")}
+                      className="flex-1 px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary/20 rounded-lg font-body-sm text-[12px] transition-all"
                     >
-                      <Lock className="w-4 h-4" />
+                      Reopen
                     </button>
                   )}
-                  {cycle.status === 'closed' && (
-                    <button 
-                      onClick={() => updateCycleStatus(cycle.id, 'active')}
-                      className="p-1.5 bg-dark border border-border rounded-md text-emerald-400 hover:bg-emerald-400/10 transition-colors"
-                      title="Reopen Cycle"
+                  {cycle.status === "upcoming" && (
+                    <button
+                      onClick={() => handleCycleAction(cycle.id, "activate")}
+                      className="flex-1 px-3 py-2 bg-secondary/10 text-secondary border border-secondary/20 hover:bg-secondary/20 rounded-lg font-body-sm text-[12px] transition-all"
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      Activate
                     </button>
                   )}
                 </div>
               </div>
             ))}
           </div>
-        </DashboardCard>
+        </div>
       </div>
 
       {/* Escalation Tracking */}
-      <DashboardCard title="Escalation Alerts" subtitle="Action required on these items">
-        <div className="p-8 text-center text-gray-500 border border-border rounded-xl bg-dark/30 flex flex-col items-center">
-          <AlertTriangle className="w-8 h-8 text-amber-400/50 mb-3" />
-          <p>No active escalations.</p>
-        </div>
-      </DashboardCard>
-    </PageContainer>
+      <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+        <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
+          <span className="material-symbols-outlined text-error">priority_high</span>
+          Escalation Alerts
+        </h3>
+        <p className="font-body-sm text-body-sm text-on-surface-variant mb-6">
+          Items requiring immediate attention
+        </p>
+
+        {escalations.length > 0 ? (
+          <div className="space-y-4">
+            {escalations.map((escalation) => (
+              <div
+                key={escalation.id}
+                className="p-5 rounded-xl bg-error/5 border border-error/30 hover:border-error/50 transition-all"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-full bg-error/20 border-2 border-error/40 flex items-center justify-center flex-shrink-0">
+                    <span className="material-symbols-outlined text-error text-[24px]">warning</span>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h4 className="font-body-sm text-body-sm text-on-surface font-medium mb-1">
+                          {escalation.type}
+                        </h4>
+                        <p className="font-body-sm text-[12px] text-on-surface-variant mb-2">
+                          {escalation.item}
+                        </p>
+                        <div className="flex items-center gap-3 text-[12px]">
+                          <span className="text-on-surface-variant">Assignee: {escalation.assignee}</span>
+                          <span className="text-error font-medium">{escalation.daysOverdue} days overdue</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 mt-4">
+                      <button className="px-4 py-2 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 rounded-lg font-body-sm text-[12px] transition-all">
+                        Send Reminder
+                      </button>
+                      <button className="px-4 py-2 bg-error/10 text-error border border-error/20 hover:bg-error/20 rounded-lg font-body-sm text-[12px] transition-all">
+                        Escalate to Admin
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center border border-outline-variant/10 rounded-xl bg-surface-container/30">
+            <span className="material-symbols-outlined text-[64px] text-on-surface-variant opacity-20 block mb-4">
+              check_circle
+            </span>
+            <h3 className="font-title-md text-title-md text-on-surface mb-2">No Active Escalations</h3>
+            <p className="font-body-sm text-body-sm text-on-surface-variant">
+              All items are on track
+            </p>
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
