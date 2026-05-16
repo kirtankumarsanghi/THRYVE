@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom";
 import { Lock, Mail } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -12,15 +13,19 @@ const loginSchema = z.object({
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login, token, role, loading } = useAuth();
   const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: { role: "employee" }
   });
 
+  if (!loading && token && role) {
+    return <Navigate to={`/${role}/dashboard`} replace />;
+  }
+
   const onSubmit = (data) => {
-    localStorage.setItem("token", "fake-jwt-token-123");
-    localStorage.setItem("role", data.role);
-    navigate("/dashboard");
+    login(data.role);
+    navigate(`/${data.role}/dashboard`);
   };
 
   return (
