@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.core.database import Base, engine, SessionLocal
 from app.api.api_router import router
@@ -20,8 +21,13 @@ app = FastAPI(title="THRYVE API", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
+    ],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -104,8 +110,50 @@ def ensure_default_quarterly_windows():
         db.close()
 
 
+def ensure_legacy_schema_columns():
+    """Add missing columns for legacy SQLite tables if missing."""
+    with engine.begin() as conn:
+        goal_columns = conn.execute(text("PRAGMA table_info(goals)")).fetchall()
+        goal_column_names = {row[1] for row in goal_columns}
+        goal_additions = [
+            ("uom_type", "TEXT DEFAULT 'Numeric'"),
+            ("uom_direction", "TEXT DEFAULT 'Higher is Better'"),
+            ("target_date", "DATE"),
+            ("completion_date", "DATE"),
+            ("approval_status", "TEXT DEFAULT 'pending'"),
+            ("manager_comment", "TEXT DEFAULT ''"),
+            ("is_locked", "BOOLEAN DEFAULT 0"),
+            ("is_shared", "BOOLEAN DEFAULT 0"),
+            ("shared_by_id", "INTEGER"),
+            ("parent_goal_id", "INTEGER"),
+            ("created_at", "DATETIME"),
+            ("updated_at", "DATETIME"),
+        ]
+        for column_name, definition in goal_additions:
+            if column_name not in goal_column_names:
+                conn.execute(text(f"ALTER TABLE goals ADD COLUMN {column_name} {definition}"))
+
+        conn.execute(text("UPDATE goals SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        conn.execute(text("UPDATE goals SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+
+        checkin_columns = conn.execute(text("PRAGMA table_info(checkins)")).fetchall()
+        checkin_column_names = {row[1] for row in checkin_columns}
+        checkin_additions = [
+            ("manager_comment", "TEXT DEFAULT ''"),
+            ("created_at", "DATETIME"),
+            ("updated_at", "DATETIME"),
+        ]
+        for column_name, definition in checkin_additions:
+            if column_name not in checkin_column_names:
+                conn.execute(text(f"ALTER TABLE checkins ADD COLUMN {column_name} {definition}"))
+
+        conn.execute(text("UPDATE checkins SET created_at = CURRENT_TIMESTAMP WHERE created_at IS NULL"))
+        conn.execute(text("UPDATE checkins SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL"))
+
+
 @app.on_event("startup")
 def startup_bootstrap():
+    ensure_legacy_schema_columns()
     ensure_demo_users()
     ensure_default_quarterly_windows()
 

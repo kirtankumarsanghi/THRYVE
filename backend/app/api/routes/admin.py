@@ -218,6 +218,25 @@ class QuarterlyWindowsUpdateBody(BaseModel):
     windows: list[QuarterlyWindowItem]
 
 
+@router.get("/users")
+def list_users(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    users = db.query(User).all()
+    return [
+        {
+            "id": u.id,
+            "full_name": u.full_name,
+            "email": u.email,
+            "role": u.role,
+            "department": u.department,
+            "status": u.status,
+        }
+        for u in users
+    ]
+
+
 @router.put("/users/{user_id}/role")
 def update_user_role(
     user_id: int,

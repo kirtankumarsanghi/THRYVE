@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, Date, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from datetime import datetime
 
 
 class Goal(Base):
@@ -36,6 +37,8 @@ class Goal(Base):
     is_shared = Column(Boolean, default=False)
     shared_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Primary owner
     parent_goal_id = Column(Integer, ForeignKey("goals.id"), nullable=True)  # Link to parent shared goal
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     # ── Foreign keys ──
     employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)

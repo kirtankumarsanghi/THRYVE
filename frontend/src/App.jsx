@@ -76,7 +76,7 @@ export default function App() {
       <AdminProvider>
         <ManagerProvider>
           <GoalProvider>
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <CommandPalette />
               <ErrorBoundary>
                 <Suspense fallback={<RouteFallback />}>

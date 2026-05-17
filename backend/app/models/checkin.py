@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+from datetime import datetime
 
 
 class Checkin(Base):
@@ -19,6 +20,8 @@ class Checkin(Base):
 
     # ── Foreign keys ──
     goal_id = Column(Integer, ForeignKey("goals.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True)
 
     # ── Relationships ──
     goal = relationship("Goal", back_populates="checkins")

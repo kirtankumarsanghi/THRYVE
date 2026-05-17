@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { useAdmin } from '../../context/AdminContext';
 import { useNavigate } from 'react-router-dom';
+import LiveDataNotice from '../../components/common/LiveDataNotice';
 
 const STATUS_COLORS = {
   Draft: '#908fa0',
@@ -78,6 +79,7 @@ export default function AdminDashboard() {
 
   return (
     <main className="pt-8 px-margin-mobile md:px-margin-desktop pb-24 max-w-container-max mx-auto min-h-screen">
+      <LiveDataNotice source="Admin + Analytics APIs" hint="Role changes, approvals, and audits are reflected here automatically." />
       {/* Header */}
       <header className="mb-10">
         <div className="flex items-center gap-2 text-on-surface-variant mb-2">
@@ -170,7 +172,7 @@ export default function AdminDashboard() {
               Recent Audit Log
             </h3>
             <button
-              onClick={() => navigate('/admin/audit-logs')}
+              onClick={() => navigate('/admin/audit')}
               className="font-body-sm text-body-sm text-primary hover:text-primary-fixed transition-colors flex items-center gap-1"
             >
               View All

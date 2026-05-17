@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import PageContainer from '../../components/common/PageContainer';
 import SectionHeader from '../../components/common/SectionHeader';
 import GoalCard from '../../components/goals/GoalCard';
+import LiveDataNotice from '../../components/common/LiveDataNotice';
 import { useGoals } from '../../context/GoalContext';
 
 export default function Goals() {
@@ -39,6 +40,7 @@ export default function Goals() {
           New Goal
         </button>
       </div>
+      <LiveDataNotice source="Goals API" hint="Create or update a goal to see immediate cross-role reflection." />
 
       {/* Filters Area */}
       <div className="surface-card p-4 sm:p-5 flex flex-col sm:flex-row gap-4 mb-8">
@@ -88,6 +90,7 @@ export default function Goals() {
           <p className="text-gray-400 text-center max-w-md">
             Try adjusting your search or filters, or create a new strategic goal to get started.
           </p>
+          <p className="text-xs text-gray-500 mt-2">Tip: use New Goal, then check Manager Approvals and Admin Dashboard.</p>
         </div>
       )}
     </PageContainer>

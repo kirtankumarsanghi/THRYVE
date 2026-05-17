@@ -2,10 +2,13 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import * as adminApi from '../api/adminApi';
 import * as analyticsApi from '../api/analyticsApi';
 import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext';
 
 const AdminContext = createContext();
 
 export const AdminProvider = ({ children }) => {
+  const { role } = useAuth();
+  const isAdmin = role === 'admin';
   const [departments, setDepartments] = useState([]);
   const [users, setUsers] = useState([]);
   const [kpis, setKpis] = useState({});
@@ -21,10 +24,15 @@ export const AdminProvider = ({ children }) => {
     try {
       const data = await adminApi.getOrgAnalytics();
       if (data) {
-        setKpis(data.kpis || data);
-        setUsers(data.users || []);
+        setKpis(data.overview || data.kpis || {});
         setDepartments(data.departments || []);
         setCycles(data.cycles || []);
+      }
+      try {
+        const usersData = await adminApi.getUsers();
+        setUsers(usersData || []);
+      } catch (e) {
+        setUsers([]);
       }
     } catch (err) {
       console.error('Failed to fetch org analytics:', err);
@@ -57,6 +65,17 @@ export const AdminProvider = ({ children }) => {
    * Load all admin data on mount
    */
   useEffect(() => {
+    if (!isAdmin) {
+      setDepartments([]);
+      setUsers([]);
+      setKpis({});
+      setAuditLogs([]);
+      setCycles([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const loadData = async () => {
       setLoading(true);
       setError(null);
@@ -72,12 +91,13 @@ export const AdminProvider = ({ children }) => {
       }
     };
     loadData();
-  }, [fetchOrgAnalytics, fetchAuditLogs]);
+  }, [isAdmin, fetchOrgAnalytics, fetchAuditLogs]);
 
   /**
    * Unlock a goal via backend API
    */
   const unlockGoal = async (goalId, reason = '') => {
+    if (!isAdmin) return;
     try {
       await adminApi.unlockGoal(goalId, reason);
       toast.success(`Goal ${goalId} unlocked successfully.`);
@@ -91,6 +111,7 @@ export const AdminProvider = ({ children }) => {
    * Update user role via backend API
    */
   const updateUserRole = async (userId, role) => {
+    if (!isAdmin) return;
     try {
       await adminApi.updateUserRole(userId, role);
       setUsers(prev =>
@@ -127,6 +148,7 @@ export const AdminProvider = ({ children }) => {
    * Refresh all data
    */
   const refreshData = async () => {
+    if (!isAdmin) return;
     setLoading(true);
     await Promise.all([
       fetchOrgAnalytics(),

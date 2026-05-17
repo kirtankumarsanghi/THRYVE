@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field, validator
 from typing import Optional
-from datetime import date
+from datetime import date, datetime
 
 
 class GoalCreate(BaseModel):
@@ -81,6 +81,8 @@ class GoalResponse(BaseModel):
     parent_goal_id: Optional[int] = None
     employee_id: int
     achievement_percentage: Optional[float] = None  # Calculated field
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -15,6 +15,7 @@ import {
 } from "recharts";
 import { useGoals, calculateGoalProgress } from "../../context/GoalContext";
 import useAnalytics from "../../hooks/useAnalytics";
+import LiveDataNotice from "../../components/common/LiveDataNotice";
 
 const STATUS_COLORS = ["#38bdf8", "#6366f1", "#10b981", "#f59e0b"];
 
@@ -46,6 +47,7 @@ export default function Dashboard() {
 
   return (
     <div className="app-shell py-6 space-y-6">
+      <LiveDataNotice source="Analytics + Goals APIs" hint="Values update when employee check-ins and manager approvals are submitted." />
       <div className="relative overflow-hidden rounded-3xl border border-white/10 p-8 bg-gradient-to-br from-[#101a3f] via-[#0b1431] to-[#091028]">
         <div className="absolute -top-24 -right-10 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute -bottom-32 left-0 w-[30rem] h-[30rem] rounded-full bg-indigo-500/10 blur-3xl" />

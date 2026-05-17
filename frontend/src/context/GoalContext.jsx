@@ -6,7 +6,12 @@ export const calculateGoalProgress = (goal) => {
   if (typeof goal.achievement_percentage === 'number') {
     return Math.max(0, Math.min(100, Math.round(goal.achievement_percentage)));
   }
-  if (!goal.uom_type) return goal.progress || 0;
+  if (!goal.uom_type) {
+    const target = parseFloat(goal.target_value) || 0;
+    const achieved = parseFloat(goal.achieved_value) || 0;
+    if (target <= 0) return 0;
+    return Math.max(0, Math.min(100, Math.round((achieved / target) * 100)));
+  }
 
   const target = parseFloat(goal.target_value) || 0;
   const actual = parseFloat(goal.achieved_value) || 0;
@@ -39,7 +44,7 @@ export const calculateGoalProgress = (goal) => {
       score = actual === 0 ? 100 : 0;
       break;
     default:
-      score = goal.progress || 0;
+      score = target > 0 ? (actual / target) * 100 : 0;
   }
 
   if (score < 0) score = 0;

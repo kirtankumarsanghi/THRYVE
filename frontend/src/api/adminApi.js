@@ -44,6 +44,11 @@ export const getOrgAnalytics = async () => {
   return response.data;
 };
 
+export const getUsers = async () => {
+  const response = await axios.get('/admin/users');
+  return response.data;
+};
+
 /**
  * Update user role
  * @param {number} userId - User ID

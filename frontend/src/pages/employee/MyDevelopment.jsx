@@ -1,417 +1,186 @@
-import { useState, useEffect } from "react";
-import { TrendingUp, Award, BookOpen, Target, Plus, CheckCircle2, Clock, Star } from "lucide-react";
-import { motion } from "framer-motion";
+import { BookOpen, Target, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import PageContainer from "../../components/common/PageContainer";
+import SectionHeader from "../../components/common/SectionHeader";
+import LiveDataNotice from "../../components/common/LiveDataNotice";
+import { calculateGoalProgress, useGoals } from "../../context/GoalContext";
 
-const MOCK_DATA = {
-  skills: [
-    { id: 1, name: "React.js", level: 85, target: 90, category: "Technical" },
-    { id: 2, name: "Leadership", level: 65, target: 80, category: "Soft Skills" },
-    { id: 3, name: "Python", level: 70, target: 85, category: "Technical" },
-    { id: 4, name: "Communication", level: 80, target: 90, category: "Soft Skills" },
-    { id: 5, name: "Project Management", level: 60, target: 75, category: "Management" },
-  ],
-  learningPaths: [
-    {
-      id: 1,
-      title: "Advanced React Patterns",
-      progress: 65,
-      modules: 8,
-      completed: 5,
-      estimatedTime: "12 hours",
-      status: "in_progress"
-    },
-    {
-      id: 2,
-      title: "Leadership Fundamentals",
-      progress: 30,
-      modules: 10,
-      completed: 3,
-      estimatedTime: "20 hours",
-      status: "in_progress"
-    },
-    {
-      id: 3,
-      title: "Cloud Architecture",
-      progress: 0,
-      modules: 15,
-      completed: 0,
-      estimatedTime: "30 hours",
-      status: "not_started"
-    },
-  ],
-  certifications: [
-    { id: 1, name: "AWS Certified Developer", status: "completed", date: "2024-03-15", expiry: "2027-03-15" },
-    { id: 2, name: "Scrum Master", status: "in_progress", progress: 75, expectedDate: "2024-06-30" },
-    { id: 3, name: "React Advanced", status: "planned", startDate: "2024-07-01" },
-  ],
-  careerGoals: [
-    { id: 1, title: "Become Senior Developer", progress: 60, deadline: "2024-12-31", milestones: 5, completed: 3 },
-    { id: 2, title: "Lead a Project Team", progress: 40, deadline: "2025-03-31", milestones: 4, completed: 1 },
-  ]
-};
+function getCategory(area) {
+  if (!area) return "General";
+  const value = area.toLowerCase();
+  if (value.includes("tech") || value.includes("engineering")) return "Technical";
+  if (value.includes("lead") || value.includes("people") || value.includes("manager")) return "Leadership";
+  if (value.includes("comm") || value.includes("feedback")) return "Communication";
+  return "Business";
+}
 
 export default function MyDevelopment() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("skills");
+  const navigate = useNavigate();
+  const { goals = [], loading } = useGoals();
 
-  useEffect(() => {
-    setTimeout(() => {
-      setData(MOCK_DATA);
-      setLoading(false);
-    }, 800);
-  }, []);
+  const skills = useMemo(() => {
+    const grouped = new Map();
+    goals.forEach((goal) => {
+      const key = goal.strategic_area || "General";
+      const progress = calculateGoalProgress(goal);
+      if (!grouped.has(key)) {
+        grouped.set(key, { name: key, values: [] });
+      }
+      grouped.get(key).values.push(progress);
+    });
 
-  if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
-        <div className="h-8 bg-white/5 rounded w-48"></div>
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map(i => <div key={i} className="h-24 bg-white/5 rounded-2xl"></div>)}
-        </div>
-        <div className="h-96 bg-white/5 rounded-2xl"></div>
-      </div>
-    );
-  }
+    return Array.from(grouped.values())
+      .map((item, index) => {
+        const level = Math.round(item.values.reduce((a, b) => a + b, 0) / item.values.length);
+        return {
+          id: `${item.name}-${index}`,
+          name: item.name,
+          level,
+          target: Math.min(100, Math.max(60, level + 12)),
+          category: getCategory(item.name),
+        };
+      })
+      .sort((a, b) => b.level - a.level)
+      .slice(0, 6);
+  }, [goals]);
 
-  const avgSkillLevel = Math.round(data.skills.reduce((acc, skill) => acc + skill.level, 0) / data.skills.length);
-  const activeLearningPaths = data.learningPaths.filter(p => p.status === "in_progress").length;
-  const completedCerts = data.certifications.filter(c => c.status === "completed").length;
+  const learningPaths = useMemo(
+    () => goals
+      .filter((goal) => (goal.status || "").toLowerCase() !== "completed")
+      .map((goal) => ({
+        id: goal.id,
+        title: goal.title,
+        progress: calculateGoalProgress(goal),
+        quarter: goal.quarter || "Current",
+        status: (goal.approval_status || "pending").toUpperCase(),
+      }))
+      .slice(0, 6),
+    [goals]
+  );
+
+  const careerGoals = useMemo(
+    () => goals
+      .map((goal) => ({
+        id: goal.id,
+        title: goal.title,
+        progress: calculateGoalProgress(goal),
+        deadline: goal.target_date,
+        quarter: goal.quarter || "-",
+      }))
+      .sort((a, b) => b.progress - a.progress)
+      .slice(0, 5),
+    [goals]
+  );
+
+  const avgSkillLevel = skills.length
+    ? Math.round(skills.reduce((sum, skill) => sum + skill.level, 0) / skills.length)
+    : 0;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 fade-in">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-white">My Development</h1>
-        <p className="text-sm text-gray-400">Track your skills, learning paths, and career growth</p>
-      </div>
+    <PageContainer>
+      <SectionHeader
+        title="My Development"
+        subtitle="Live growth insights generated from your current goals and check-ins."
+      />
+      <LiveDataNotice source="Goals API" hint="When you update goals or check-ins, this page refreshes with real values." />
 
-      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-blue-500/5 border border-blue-500/10 rounded-2xl p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-              <TrendingUp className="text-blue-400" size={20} />
-            </div>
+            <TrendingUp className="w-5 h-5 text-cyan-300" />
             <div>
-              <p className="text-sm text-gray-400">Avg Skill Level</p>
-              <p className="text-2xl font-bold text-blue-400">{avgSkillLevel}%</p>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Average Capability</p>
+              <p className="kpi-value text-white">{avgSkillLevel}%</p>
             </div>
           </div>
         </div>
-
-        <div className="bg-purple-500/5 border border-purple-500/10 rounded-2xl p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-              <BookOpen className="text-purple-400" size={20} />
-            </div>
+            <BookOpen className="w-5 h-5 text-violet-300" />
             <div>
-              <p className="text-sm text-gray-400">Active Learning</p>
-              <p className="text-2xl font-bold text-purple-400">{activeLearningPaths}</p>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Active Development Goals</p>
+              <p className="kpi-value text-white">{learningPaths.length}</p>
             </div>
           </div>
         </div>
-
-        <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-2xl p-5">
+        <div className="surface-card p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-              <Award className="text-emerald-400" size={20} />
-            </div>
+            <Target className="w-5 h-5 text-emerald-300" />
             <div>
-              <p className="text-sm text-gray-400">Certifications</p>
-              <p className="text-2xl font-bold text-emerald-400">{completedCerts}</p>
+              <p className="text-xs uppercase tracking-wider text-slate-400">Completed Goals</p>
+              <p className="kpi-value text-white">{goals.filter((goal) => (goal.status || "").toLowerCase() === "completed").length}</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-white/10">
-        {["skills", "learning", "certifications", "career"].map(tab => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-6 py-3 font-medium text-sm transition-colors relative ${
-              activeTab === tab ? "text-blue-400" : "text-gray-400 hover:text-white"
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-            {activeTab === tab && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
-              />
-            )}
+      <div className="surface-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-white font-semibold text-lg">Skill Areas</h3>
+          <button type="button" onClick={() => navigate("/employee/goals/create")} className="px-4 py-2 rounded-lg border border-blue-400/30 text-blue-200 hover:bg-blue-500/15 text-sm">
+            Add Development Goal
           </button>
-        ))}
+        </div>
+        {loading ? (
+          <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-16 rounded-xl bg-white/5 animate-pulse" />)}</div>
+        ) : skills.length === 0 ? (
+          <p className="text-slate-400 text-sm">No skill signals yet. Create a goal to start tracking development.</p>
+        ) : (
+          <div className="space-y-3">
+            {skills.map((skill) => (
+              <div key={skill.id} className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-white font-medium">{skill.name}</p>
+                  <span className="text-xs text-slate-300">{skill.category}</span>
+                </div>
+                <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-2">
+                  <div className="h-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${skill.level}%` }} />
+                </div>
+                <p className="text-xs text-slate-400">Current {skill.level}% • Target {skill.target}%</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Skills Tab */}
-      {activeTab === "skills" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">My Skills</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors">
-              <Plus size={16} />
-              Add Skill
-            </button>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+        <div className="surface-card p-6">
+          <h3 className="text-white font-semibold text-lg mb-4">Development Pipeline</h3>
+          <div className="space-y-3">
+            {learningPaths.length === 0 ? (
+              <p className="text-slate-400 text-sm">No active development goals.</p>
+            ) : (
+              learningPaths.map((item) => (
+                <button key={item.id} type="button" onClick={() => navigate(`/employee/goals/${item.id}`)} className="w-full text-left rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-blue-300/35">
+                  <p className="text-white font-medium">{item.title}</p>
+                  <p className="text-xs text-slate-400 mt-1">{item.quarter} • {item.status}</p>
+                  <div className="h-2 rounded-full bg-white/10 overflow-hidden mt-3">
+                    <div className="h-full bg-blue-500" style={{ width: `${item.progress}%` }} />
+                  </div>
+                </button>
+              ))
+            )}
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.skills.map((skill, index) => (
-              <motion.div
-                key={skill.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white/2 border border-white/5 rounded-2xl p-5"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-base font-semibold text-white">{skill.name}</h3>
-                    <p className="text-xs text-gray-400">{skill.category}</p>
-                  </div>
-                  <span className="px-2 py-1 bg-blue-500/10 text-blue-400 text-xs font-semibold rounded-lg border border-blue-500/20">
-                    Level {skill.level}
-                  </span>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Current</span>
-                    <span className="text-white font-semibold">{skill.level}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${skill.level}%` }}
-                      transition={{ duration: 1, delay: index * 0.1 }}
-                      className="h-full bg-blue-500 rounded-full"
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <span>Target: {skill.target}%</span>
-                    <span>{skill.target - skill.level}% to go</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+        <div className="surface-card p-6">
+          <h3 className="text-white font-semibold text-lg mb-4">Top Career Goals</h3>
+          <div className="space-y-3">
+            {careerGoals.length === 0 ? (
+              <p className="text-slate-400 text-sm">No goals yet.</p>
+            ) : (
+              careerGoals.map((goal) => (
+                <button key={goal.id} type="button" onClick={() => navigate(`/employee/goals/${goal.id}`)} className="w-full text-left rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-emerald-300/35">
+                  <p className="text-white font-medium">{goal.title}</p>
+                  <p className="text-xs text-slate-400 mt-1">{goal.quarter} • Target {goal.deadline || "TBD"}</p>
+                  <p className="text-xs text-emerald-300 mt-2">Progress {goal.progress}%</p>
+                </button>
+              ))
+            )}
           </div>
-        </motion.div>
-      )}
-
-      {/* Learning Paths Tab */}
-      {activeTab === "learning" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Learning Paths</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors">
-              <Plus size={16} />
-              Enroll in Course
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {data.learningPaths.map((path, index) => (
-              <motion.div
-                key={path.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white/2 border border-white/5 rounded-2xl p-6"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">{path.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span>{path.modules} modules</span>
-                      <span>â€¢</span>
-                      <span>{path.estimatedTime}</span>
-                      <span>â€¢</span>
-                      <span className={`font-semibold ${
-                        path.status === "in_progress" ? "text-blue-400" :
-                        path.status === "completed" ? "text-emerald-400" :
-                        "text-gray-500"
-                      }`}>
-                        {path.status === "in_progress" ? "In Progress" :
-                         path.status === "completed" ? "Completed" :
-                         "Not Started"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="w-16 h-16 relative">
-                    <svg className="w-16 h-16 transform -rotate-90">
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="rgba(255,255,255,0.1)"
-                        strokeWidth="4"
-                        fill="none"
-                      />
-                      <circle
-                        cx="32"
-                        cy="32"
-                        r="28"
-                        stroke="#3B82F6"
-                        strokeWidth="4"
-                        fill="none"
-                        strokeDasharray={`${2 * Math.PI * 28}`}
-                        strokeDashoffset={`${2 * Math.PI * 28 * (1 - path.progress / 100)}`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-sm font-bold text-white">{path.progress}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-400">
-                    {path.completed} of {path.modules} modules completed
-                  </span>
-                  <button className="px-4 py-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg text-sm font-medium transition-colors border border-blue-500/20">
-                    {path.status === "not_started" ? "Start Learning" : "Continue"}
-                  </button>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Certifications Tab */}
-      {activeTab === "certifications" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Certifications</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors">
-              <Plus size={16} />
-              Add Certification
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {data.certifications.map((cert, index) => (
-              <motion.div
-                key={cert.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: index * 0.05 }}
-                className={`bg-white/2 border rounded-2xl p-5 ${
-                  cert.status === "completed" ? "border-emerald-500/20 bg-emerald-500/5" :
-                  cert.status === "in_progress" ? "border-blue-500/20 bg-blue-500/5" :
-                  "border-white/5"
-                }`}
-              >
-                <div className="flex items-start gap-3 mb-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                    cert.status === "completed" ? "bg-emerald-500/10 border border-emerald-500/20" :
-                    cert.status === "in_progress" ? "bg-blue-500/10 border border-blue-500/20" :
-                    "bg-white/5 border border-white/10"
-                  }`}>
-                    {cert.status === "completed" ? <CheckCircle2 className="text-emerald-400" size={24} /> :
-                     cert.status === "in_progress" ? <Clock className="text-blue-400" size={24} /> :
-                     <Star className="text-gray-400" size={24} />}
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-base font-semibold text-white mb-1">{cert.name}</h3>
-                    {cert.status === "completed" && (
-                      <p className="text-xs text-gray-400">
-                        Earned: {cert.date} â€¢ Expires: {cert.expiry}
-                      </p>
-                    )}
-                    {cert.status === "in_progress" && (
-                      <div className="space-y-2 mt-2">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-gray-400">Progress</span>
-                          <span className="text-white font-semibold">{cert.progress}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-white/10 rounded-full overflow-hidden">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${cert.progress}%` }} />
-                        </div>
-                        <p className="text-xs text-gray-400">Expected: {cert.expectedDate}</p>
-                      </div>
-                    )}
-                    {cert.status === "planned" && (
-                      <p className="text-xs text-gray-400">Planned start: {cert.startDate}</p>
-                    )}
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-
-      {/* Career Goals Tab */}
-      {activeTab === "career" && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-4"
-        >
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-white">Career Goals</h2>
-            <button className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-medium transition-colors">
-              <Plus size={16} />
-              Add Career Goal
-            </button>
-          </div>
-
-          <div className="space-y-4">
-            {data.careerGoals.map((goal, index) => (
-              <motion.div
-                key={goal.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
-                className="bg-white/2 border border-white/5 rounded-2xl p-6"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white mb-2">{goal.title}</h3>
-                    <div className="flex items-center gap-4 text-sm text-gray-400">
-                      <span>Deadline: {goal.deadline}</span>
-                      <span>â€¢</span>
-                      <span>Milestones: {goal.completed}/{goal.milestones}</span>
-                    </div>
-                  </div>
-                  <Target className="text-blue-400" size={24} />
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-400">Progress</span>
-                    <span className="text-white font-semibold">{goal.progress}%</span>
-                  </div>
-                  <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${goal.progress}%` }}
-                      transition={{ duration: 1, delay: index * 0.1 }}
-                      className="h-full bg-blue-500 rounded-full"
-                    />
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      )}
-    </div>
+        </div>
+      </div>
+    </PageContainer>
   );
 }

@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.routes import auth, goals, checkins, approvals, analytics, admin, audit, health, reports
+from app.api.routes import auth, goals, checkins, approvals, analytics, admin, audit, health, reports, users, notifications
 
 router = APIRouter()
 
@@ -13,3 +13,5 @@ router.include_router(admin.router, prefix="/admin", tags=["Admin"])
 router.include_router(audit.router, prefix="/audit", tags=["Audit"])
 router.include_router(health.router, prefix="/health", tags=["Health"])
 router.include_router(reports.router, prefix="/reports", tags=["Reports"])
+router.include_router(users.router, prefix="/users", tags=["Users"])
+router.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])

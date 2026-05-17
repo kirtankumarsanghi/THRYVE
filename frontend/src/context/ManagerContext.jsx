@@ -2,10 +2,13 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 import * as approvalsApi from '../api/approvalsApi';
 import * as analyticsApi from '../api/analyticsApi';
 import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext';
 
 const ManagerContext = createContext();
 
 export const ManagerProvider = ({ children }) => {
+  const { role } = useAuth();
+  const canAccessManagerData = role === 'manager' || role === 'admin';
   const [pendingApprovals, setPendingApprovals] = useState([]);
   const [team, setTeam] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -55,6 +58,15 @@ export const ManagerProvider = ({ children }) => {
    * Load all manager data on mount
    */
   useEffect(() => {
+    if (!canAccessManagerData) {
+      setPendingApprovals([]);
+      setTeam([]);
+      setDepartments([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
     const loadData = async () => {
       setLoading(true);
       setError(null);
@@ -71,12 +83,13 @@ export const ManagerProvider = ({ children }) => {
       }
     };
     loadData();
-  }, [fetchPendingApprovals, fetchTeamData, fetchDepartments]);
+  }, [canAccessManagerData, fetchPendingApprovals, fetchTeamData, fetchDepartments]);
 
   /**
    * Approve a goal via backend API
    */
   const approveItem = async (goalId, comment = '') => {
+    if (!canAccessManagerData) return;
     try {
       await approvalsApi.approveGoal(goalId, comment);
       setPendingApprovals(prev => prev.filter(item => item.id !== goalId));
@@ -90,6 +103,7 @@ export const ManagerProvider = ({ children }) => {
    * Reject a goal via backend API
    */
   const rejectItem = async (goalId, comment = '') => {
+    if (!canAccessManagerData) return;
     try {
       await approvalsApi.rejectGoal(goalId, comment);
       setPendingApprovals(prev => prev.filter(item => item.id !== goalId));
@@ -103,6 +117,7 @@ export const ManagerProvider = ({ children }) => {
    * Refresh all data
    */
   const refreshData = async () => {
+    if (!canAccessManagerData) return;
     setLoading(true);
     await Promise.all([
       fetchPendingApprovals(),

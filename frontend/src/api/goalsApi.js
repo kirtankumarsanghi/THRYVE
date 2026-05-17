@@ -73,3 +73,8 @@ export const getGoalCheckins = async (goalId) => {
   const response = await axios.get(`/checkins/goal/${goalId}`);
   return response.data;
 };
+
+export const createSharedGoal = async (goalData) => {
+  const response = await axios.post('/goals/shared', goalData);
+  return response.data;
+};
