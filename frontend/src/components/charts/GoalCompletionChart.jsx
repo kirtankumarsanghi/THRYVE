@@ -1,15 +1,16 @@
+import { memo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { goalCompletionData } from '../../data/mockData';
 
 const COLORS = ['#22D3EE', '#8B7FFF', '#f59e0b', '#ef4444'];
 
-export default function GoalCompletionChart() {
+function GoalCompletionChart({ data = [] }) {
+  if (!data.length) return null;
   return (
-    <div className="h-48 w-full">
+    <div className="h-48 w-full" role="img" aria-label="Goal completion distribution chart">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
-            data={goalCompletionData}
+            data={data}
             cx="50%"
             cy="50%"
             innerRadius={65}
@@ -18,7 +19,7 @@ export default function GoalCompletionChart() {
             dataKey="value"
             stroke="none"
           >
-            {goalCompletionData.map((entry, index) => (
+            {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
             ))}
           </Pie>
@@ -31,3 +32,5 @@ export default function GoalCompletionChart() {
     </div>
   );
 }
+
+export default memo(GoalCompletionChart);

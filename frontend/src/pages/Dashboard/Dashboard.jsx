@@ -1,254 +1,202 @@
-import { useState, useEffect } from "react";
-import { 
-  Target, TrendingUp, ClipboardList, Calendar, 
-  Plus, Send, Zap, ChevronRight, Lock
-} from "lucide-react";
-import { Link } from "react-router-dom";
+import { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, Calendar, CheckCircle2, ClipboardList, Target, TrendingUp, Zap } from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
+import { useGoals, calculateGoalProgress } from "../../context/GoalContext";
+import useAnalytics from "../../hooks/useAnalytics";
 
-// Mock API Data
-const MOCK_API_DATA = {
-  stats: {
-    activeGoals: 5,
-    totalGoals: 8,
-    overallProgress: 62,
-    pendingApproval: 2,
-    currentQuarter: "Q2 Check-in Open",
-  },
-  goals: [
-    { id: 1, title: "Implement OKR Tracking Protocol", thrust: "Operations", uom: "%", target: 100, q1: 25, q2: 75, progress: 75, status: "Approved" },
-    { id: 2, title: "Reduce Cloud Infrastructure Spend", thrust: "Finance", uom: "$K", target: 50, q1: 10, q2: 25, progress: 50, status: "Submitted" },
-    { id: 3, title: "Launch Client Portal v2", thrust: "Product", uom: "Milestones", target: 100, q1: 0, q2: 40, progress: 40, status: "Locked" },
-    { id: 4, title: "Hire 3 Senior Engineers", thrust: "Talent", uom: "Hires", target: 3, q1: 1, q2: 2, progress: 66, status: "Draft" },
-  ],
-  insights: [
-    { id: 1, title: "High Probability of Success", desc: "Goal 'Implement OKR Tracking Protocol' is trending well above expected velocity. You are 15% ahead of schedule.", color: "emerald" },
-    { id: 2, title: "Attention Needed", desc: "Your 'Launch Client Portal v2' goal has stagnated in the last 14 days. Consider adjusting Q2 targets.", color: "orange" },
-    { id: 3, title: "Resource Optimization", desc: "Based on your progress, reallocating 10% of focus to 'Cloud Spend' could yield a 20% increase in outcome.", color: "blue" },
-  ],
-  settings: {
-    isCycleLocked: false,
-    isQ2WindowOpen: true,
-  }
-};
-
-const STATUS_STYLES = {
-  Draft: "bg-gray-500/10 text-gray-400 border-gray-500/20",
-  Submitted: "bg-orange-500/10 text-orange-400 border-orange-500/20",
-  Approved: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  Locked: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-};
+const STATUS_COLORS = ["#38bdf8", "#6366f1", "#10b981", "#f59e0b"];
 
 export default function Dashboard() {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { goals = [], loading: goalsLoading } = useGoals();
+  const { overview, trends, status, loading: analyticsLoading } = useAnalytics();
 
-  useEffect(() => {
-    // Simulate API fetch
-    const fetchData = async () => {
-      await new Promise(r => setTimeout(r, 1200));
-      setData(MOCK_API_DATA);
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
+  const loading = goalsLoading || analyticsLoading;
 
-  if (loading) {
-    return (
-      <div className="p-6 max-w-7xl mx-auto space-y-6 animate-pulse">
-        <div className="h-8 bg-white/5 rounded w-48 mb-6"></div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <div key={i} className="h-28 bg-white/5 rounded-2xl border border-white/5"></div>)}
-        </div>
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-          <div className="xl:col-span-3 h-80 bg-white/5 rounded-2xl border border-white/5"></div>
-          <div className="h-80 bg-white/5 rounded-2xl border border-white/5"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-white/5 rounded-2xl border border-white/5"></div>)}
-        </div>
-      </div>
-    );
-  }
+  const trendData =
+    trends?.quarters?.map((q, i) => ({
+      quarter: q,
+      completion: trends.completion_rates?.[i] || 0,
+      progress: trends.avg_progress?.[i] || 0,
+    })) || [];
 
-  const { stats, goals, insights, settings } = data;
+  const statusData = [
+    { name: "Pending", value: status?.pending || 0 },
+    { name: "In Progress", value: status?.in_progress || 0 },
+    { name: "Completed", value: status?.completed || 0 },
+    { name: "At Risk", value: status?.at_risk || 0 },
+  ];
+
+  const spotlight = useMemo(
+    () => [...goals].sort((a, b) => calculateGoalProgress(b) - calculateGoalProgress(a)).slice(0, 4),
+    [goals]
+  );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6 fade-in font-sans">
-      
-      {/* Header */}
-      <div className="mb-2">
-        <h1 className="text-2xl font-bold text-white">Employee Dashboard</h1>
-        <p className="text-sm text-gray-400">Welcome back. Here is your quarterly overview.</p>
-      </div>
-
-      {/* Top Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-            <Target className="text-blue-400" size={24} />
-          </div>
+    <div className="app-shell py-6 space-y-6">
+      <div className="relative overflow-hidden rounded-3xl border border-white/10 p-8 bg-gradient-to-br from-[#101a3f] via-[#0b1431] to-[#091028]">
+        <div className="absolute -top-24 -right-10 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl" />
+        <div className="absolute -bottom-32 left-0 w-[30rem] h-[30rem] rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="relative flex flex-col lg:flex-row lg:items-end justify-between gap-6">
           <div>
-            <p className="text-sm text-gray-400 font-medium">Active Goals</p>
-            <p className="text-2xl font-bold text-white">{stats.activeGoals} <span className="text-sm text-gray-500">/ {stats.totalGoals}</span></p>
+            <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">Live Employee Workspace</p>
+            <h1 className="text-3xl lg:text-4xl font-bold text-white">Performance Dashboard</h1>
+            <p className="text-slate-300 mt-2 max-w-2xl">
+              Track goal velocity, quarterly execution, and progress quality with real-time organizational analytics.
+            </p>
           </div>
-        </div>
-        
-        <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
-            <TrendingUp className="text-emerald-400" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 font-medium">Overall Progress</p>
-            <p className="text-2xl font-bold text-white">{stats.overallProgress}%</p>
-          </div>
-        </div>
-
-        <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/20">
-            <ClipboardList className="text-orange-400" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 font-medium">Pending Approval</p>
-            <p className="text-2xl font-bold text-white">{stats.pendingApproval}</p>
-          </div>
-        </div>
-
-        <div className="bg-white/2 border border-white/5 rounded-2xl p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-purple-500/10 flex items-center justify-center border border-purple-500/20">
-            <Calendar className="text-purple-400" size={24} />
-          </div>
-          <div>
-            <p className="text-sm text-gray-400 font-medium">Current Quarter</p>
-            <p className="text-sm font-bold text-purple-300 mt-1">{stats.currentQuarter}</p>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate("/employee/goals/create")}
+            className="px-5 py-3 rounded-xl bg-cyan-400/20 border border-cyan-300/40 text-cyan-100 hover:bg-cyan-400/30 transition-colors inline-flex items-center gap-2"
+          >
+            <Zap size={16} /> Create Strategic Goal
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        {/* Goals Summary Table */}
-        <div className="xl:col-span-3 bg-white/2 border border-white/5 rounded-2xl overflow-hidden flex flex-col">
-          <div className="px-6 py-5 border-b border-white/5 flex justify-between items-center bg-white/[0.01]">
-            <h2 className="text-base font-bold text-white">Goals Summary</h2>
-            <Link to="/employee/goals" className="text-sm text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
-              View All <ChevronRight size={16} />
-            </Link>
+      <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4">
+        <Kpi title="My Goals" value={goals.length} icon={Target} tone="text-blue-300" />
+        <Kpi title="Completed" value={overview?.completed_goals ?? 0} icon={CheckCircle2} tone="text-emerald-300" />
+        <Kpi title="Avg Progress" value={`${overview?.avg_progress ?? 0}%`} icon={TrendingUp} tone="text-cyan-300" />
+        <Kpi title="Pending Approval" value={overview?.pending_goals ?? 0} icon={ClipboardList} tone="text-amber-300" />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-12 gap-6">
+        <div className="2xl:col-span-7 surface-card p-6 min-w-0">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-white font-semibold text-lg">Quarterly Performance Trend</h2>
+            <button type="button" onClick={() => navigate("/employee/analytics")} className="text-sm text-slate-300 hover:text-white flex items-center gap-1">
+              Open Analytics <ArrowRight size={14} />
+            </button>
           </div>
-          <div className="overflow-x-auto flex-1">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-white/5 bg-white/[0.02]">
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Goal Title</th>
-                  <th className="px-4 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Thrust Area</th>
-                  <th className="px-4 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Target</th>
-                  <th className="px-4 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Q1 Actual</th>
-                  <th className="px-4 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Q2 Actual</th>
-                  <th className="px-4 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider">Progress</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {goals.map((g) => (
-                  <tr key={g.id} className="hover:bg-white/[0.02] transition-colors">
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-medium text-white line-clamp-1">{g.title}</p>
-                    </td>
-                    <td className="px-4 py-4">
-                      <span className="text-xs text-gray-300 bg-white/5 px-2.5 py-1 rounded-md border border-white/5">
-                        {g.thrust}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-300">
-                      {g.target} <span className="text-xs text-gray-500">{g.uom}</span>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-gray-300">{g.q1}</td>
-                    <td className="px-4 py-4 text-sm text-gray-300">{g.q2}</td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full h-1.5 bg-white/10 rounded-full w-16">
-                          <div className="h-full bg-blue-500 rounded-full" style={{ width: `${g.progress}%` }} />
-                        </div>
-                        <span className="text-xs text-gray-400">{g.progress}%</span>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={trendData} margin={{ top: 8, right: 8, left: -20, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+                <XAxis dataKey="quarter" stroke="#94a3b8" />
+                <YAxis stroke="#94a3b8" />
+                <Tooltip />
+                <Line type="monotone" dataKey="completion" stroke="#22d3ee" strokeWidth={3} dot={{ r: 4 }} />
+                <Line type="monotone" dataKey="progress" stroke="#818cf8" strokeWidth={3} dot={{ r: 4 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="2xl:col-span-5 surface-card p-6 min-w-0">
+          <h2 className="text-white font-semibold text-lg mb-5">Status Mix</h2>
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={56} outerRadius={88} paddingAngle={4}>
+                  {statusData.map((_, i) => <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {statusData.map((s, i) => (
+              <div key={s.name} className="text-xs rounded-lg px-3 py-2 bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                <span className="text-slate-300">{s.name}</span>
+                <span style={{ color: STATUS_COLORS[i] }} className="font-semibold">{s.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="2xl:col-span-8 surface-card p-6 min-w-0">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-white font-semibold text-lg">Goal Spotlight</h2>
+            <button type="button" onClick={() => navigate("/employee/goals")} className="text-sm text-slate-300 hover:text-white flex items-center gap-1">
+              View all goals <ArrowRight size={14} />
+            </button>
+          </div>
+          {loading ? (
+            <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="h-14 rounded-xl bg-white/5 animate-pulse" />)}</div>
+          ) : spotlight.length === 0 ? (
+            <div className="text-center py-14 text-slate-400">No goals yet. Start by creating your first strategic goal.</div>
+          ) : (
+            <div className="space-y-3">
+              {spotlight.map((goal) => {
+                const progress = calculateGoalProgress(goal);
+                return (
+                  <button
+                    type="button"
+                    key={goal.id}
+                    onClick={() => navigate(`/employee/goals/${goal.id}`)}
+                    className="w-full text-left p-4 rounded-xl border border-white/10 bg-white/[0.02] hover:bg-white/[0.04] hover:border-cyan-300/30 transition-all"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
+                      <div>
+                        <p className="text-white font-medium">{goal.title}</p>
+                        <p className="text-xs text-slate-400 mt-1">{goal.strategic_area || "General"} • {goal.quarter || "-"}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider border ${STATUS_STYLES[g.status]}`}>
-                        {g.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      <div className="w-full sm:w-56">
+                        <div className="flex justify-between text-xs text-slate-400 mb-1">
+                          <span>Progress</span>
+                          <span className="text-white">{progress}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-cyan-400 to-blue-500" style={{ width: `${progress}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Quick Actions */}
-        <div className="xl:col-span-1 bg-white/2 border border-white/5 rounded-2xl p-6 flex flex-col">
-          <h2 className="text-base font-bold text-white mb-5">Quick Actions</h2>
-          <div className="space-y-3 flex-1 flex flex-col justify-center">
-            
-            <button 
-              disabled={stats.activeGoals >= stats.totalGoals || settings.isCycleLocked}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <div className="flex items-center gap-3">
-                {settings.isCycleLocked ? <Lock size={18} /> : <Plus size={18} />}
-                <span className="text-sm font-semibold">Add New Goal</span>
-              </div>
-              <ChevronRight size={16} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
-
-            <button className="w-full flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all group">
-              <div className="flex items-center gap-3">
-                <Send size={18} className="text-orange-400" />
-                <span className="text-sm font-semibold">Submit for Approval</span>
-              </div>
-              <ChevronRight size={16} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
-
-            <button 
-              disabled={!settings.isQ2WindowOpen}
-              className="w-full flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
-            >
-              <div className="flex items-center gap-3">
-                <Calendar size={18} className="text-purple-400" />
-                <span className="text-sm font-semibold">Open Q2 Check-in</span>
-              </div>
-              <ChevronRight size={16} className="opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-            </button>
-
+        <div className="2xl:col-span-4 surface-card p-6 min-w-0">
+          <h2 className="text-white font-semibold text-lg mb-4">Quick Actions</h2>
+          <div className="space-y-3">
+            <Action label="Update Quarterly Check-in" icon={Calendar} onClick={() => navigate("/employee/checkins")} />
+            <Action label="Open My Progress" icon={TrendingUp} onClick={() => navigate("/employee/analytics")} />
+            <Action label="Review Notifications" icon={ClipboardList} onClick={() => navigate("/employee/notifications")} />
+            <Action label="Create New Goal" icon={Target} onClick={() => navigate("/employee/goals/create")} />
           </div>
         </div>
       </div>
-
-      {/* AI Insights Panel */}
-      <div className="mt-8">
-        <div className="flex items-center gap-2 mb-4">
-          <Zap size={18} className="text-yellow-400" />
-          <h2 className="text-base font-bold text-white">Thryve AI Insights</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {insights.map(insight => {
-            const colors = {
-              emerald: "from-emerald-500/10 to-transparent border-emerald-500/20 text-emerald-400",
-              orange: "from-orange-500/10 to-transparent border-orange-500/20 text-orange-400",
-              blue: "from-blue-500/10 to-transparent border-blue-500/20 text-blue-400",
-            };
-            
-            return (
-              <div key={insight.id} className={`bg-gradient-to-br border rounded-2xl p-5 ${colors[insight.color]}`}>
-                <h3 className="text-sm font-bold mb-2 flex items-center gap-2">
-                  {insight.title}
-                </h3>
-                <p className="text-xs text-gray-300 leading-relaxed">
-                  {insight.desc}
-                </p>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
     </div>
+  );
+}
+
+function Kpi({ title, value, icon: Icon, tone }) {
+  return (
+    <div className="surface-card p-5">
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-wider text-slate-400">{title}</p>
+        <Icon className={`w-4 h-4 ${tone}`} />
+      </div>
+      <p className="kpi-value text-white mt-2">{value}</p>
+    </div>
+  );
+}
+
+function Action({ label, icon: Icon, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full p-3 rounded-xl border border-white/12 bg-white/[0.02] hover:bg-white/[0.05] hover:border-cyan-300/30 text-left transition-all flex items-center justify-between"
+    >
+      <span className="text-sm text-white flex items-center gap-2"><Icon size={15} className="text-cyan-300" /> {label}</span>
+      <ArrowRight size={14} className="text-slate-400" />
+    </button>
   );
 }

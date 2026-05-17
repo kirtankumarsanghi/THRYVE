@@ -60,7 +60,7 @@ export default function AuditLogs() {
   };
 
   return (
-    <main className="pt-8 px-margin-mobile md:px-margin-desktop pb-24 max-w-container-max mx-auto min-h-screen">
+    <main className="app-shell pt-8 pb-24 min-h-screen">
       <Breadcrumb />
       <BackButton to="/admin/dashboard" label="Back to Dashboard" />
 
@@ -145,7 +145,7 @@ export default function AuditLogs() {
       </div>
 
       {/* Filters */}
-      <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6 mb-6">
+      <div className="surface-card p-6 mb-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">
@@ -156,14 +156,14 @@ export default function AuditLogs() {
               placeholder="Search by actor, target, or details..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-surface-container border border-outline-variant/20 rounded-lg pl-10 pr-4 py-3 text-body-base text-on-surface placeholder-on-surface-variant/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+              className="w-full enterprise-input pl-10 pr-4 py-3 text-body-base text-on-surface placeholder-on-surface-variant/50"
             />
           </div>
 
           <select
             value={filterAction}
             onChange={(e) => setFilterAction(e.target.value)}
-            className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-4 py-3 text-body-base text-on-surface focus:border-primary/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all appearance-none cursor-pointer"
+            className="w-full enterprise-input px-4 py-3 text-body-base text-on-surface appearance-none cursor-pointer"
           >
             <option value="all">All Actions</option>
             <option value="approved">Approved</option>
@@ -178,7 +178,7 @@ export default function AuditLogs() {
       </div>
 
       {/* Audit Log Timeline */}
-      <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+      <div className="surface-card p-6">
         <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
           <span className="material-symbols-outlined text-error">timeline</span>
           Activity Timeline

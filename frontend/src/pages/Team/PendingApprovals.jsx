@@ -1,5 +1,6 @@
 import { CheckCircle2, XCircle, Clock, MessageSquare, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 const PENDING = [
   { id: 1, name: "Alex Johnson",  goal: "Increase API response time by 40%",   category: "Technical",   deadline: "Jun 30", priority: "high" },
@@ -29,10 +30,11 @@ export default function PendingApprovals() {
 
   const handleAction = (id, action) => {
     setItems(prev => prev.filter(item => item.id !== id));
+    toast.success(action === "approve" ? "Goal approved" : action === "reject" ? "Goal sent back" : "Approval deferred");
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="app-shell py-6 max-w-5xl">
       <div className="flex items-center gap-3 mb-8">
         <CheckCircle2 className="text-purple-400" size={24} />
         <div>
@@ -50,7 +52,7 @@ export default function PendingApprovals() {
       ) : (
         <div className="space-y-4">
           {items.map(item => (
-            <div key={item.id} className="bg-white/3 border border-white/8 rounded-2xl p-6 hover:border-purple-500/20 transition-all">
+            <div key={item.id} className="surface-card surface-card-hover p-6">
               <div className="flex items-start gap-4">
                 <Initials name={item.name} />
                 <div className="flex-1 min-w-0">
@@ -76,7 +78,7 @@ export default function PendingApprovals() {
                     value={comments[item.id] || ""}
                     onChange={e => setComments(prev => ({ ...prev, [item.id]: e.target.value }))}
                     placeholder="Optional feedback for the employee..."
-                    className="w-full mt-4 bg-white/3 border border-white/8 rounded-xl px-4 py-2.5 text-sm text-white placeholder:text-gray-600 resize-none focus:outline-none focus:border-purple-500/40 transition-colors"
+                    className="w-full mt-4 enterprise-input px-4 py-2.5 text-sm text-white placeholder:text-gray-600 resize-none"
                   />
 
                   {/* Action Buttons */}
@@ -93,7 +95,7 @@ export default function PendingApprovals() {
                     >
                       <XCircle size={16} /> Reject
                     </button>
-                    <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/3 text-gray-400 border border-white/8 hover:bg-white/8 text-sm transition-all ml-auto">
+                    <button onClick={() => handleAction(item.id, "defer")} className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/3 text-gray-400 border border-white/8 hover:bg-white/8 text-sm transition-all ml-auto">
                       <Clock size={14} /> Defer
                     </button>
                   </div>

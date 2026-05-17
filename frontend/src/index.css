@@ -1,4 +1,6 @@
- @tailwind base;
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -9,9 +11,30 @@
 }
 
 body {
-    background: #0c1324;
+    background:
+      radial-gradient(circle at 90% -10%, rgba(42, 72, 170, 0.25), transparent 35%),
+      radial-gradient(circle at 10% 110%, rgba(23, 190, 187, 0.18), transparent 40%),
+      #060d1f;
     color: #dce1fb;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+}
+
+#root {
+    min-height: 100vh;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid rgba(146, 168, 255, 0.95);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px rgba(146, 168, 255, 0.2);
 }
 
 /* Material Symbols Configuration */
@@ -44,4 +67,74 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.app-shell {
+    width: min(1320px, calc(100vw - 2rem));
+    margin: 0 auto;
+}
+
+.surface-card {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.045) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    border-radius: 1rem;
+    box-shadow: 0 10px 36px rgba(0, 0, 0, 0.24);
+}
+
+.surface-card-hover {
+    transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease, background 240ms ease;
+}
+
+.surface-card-hover:hover {
+    transform: translateY(-3px);
+    border-color: rgba(144, 167, 255, 0.32);
+    box-shadow: 0 18px 44px rgba(8, 18, 40, 0.45);
+}
+
+.kpi-value {
+    font-size: clamp(1.4rem, 2.2vw, 2rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+}
+
+.responsive-table {
+    overflow-x: auto;
+    scrollbar-gutter: stable;
+}
+
+.enterprise-input {
+    background: rgba(13, 22, 45, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    color: #e7eeff;
+    transition: border-color 200ms ease, box-shadow 200ms ease, background 200ms ease;
+}
+
+.enterprise-input:focus {
+    outline: none;
+    border-color: rgba(146, 168, 255, 0.8);
+    box-shadow: 0 0 0 3px rgba(146, 168, 255, 0.2);
+}
+
+.status-pill {
+    border-radius: 999px;
+    padding: 0.24rem 0.6rem;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.subtle-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+}
+
+@media (max-width: 768px) {
+    .app-shell {
+        width: calc(100vw - 1rem);
+    }
 }

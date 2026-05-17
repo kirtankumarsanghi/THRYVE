@@ -25,6 +25,7 @@ import ManagerDashboard from "../pages/manager/ManagerDashboard";
 import ManagerApprovals from "../pages/manager/ManagerApprovals";
 import ManagerTeam from "../pages/Team/ManagerDashboard";
 import ManagerAnalytics from "../pages/manager/TeamAnalytics";
+import ManagerReports from "../pages/manager/Reports";
 import EmployeeReview from "../pages/Team/EmployeeReview";
 
 // Admin Pages
@@ -60,6 +61,7 @@ export default function AppRoutes() {
           <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
           <Route path="/employee/goals" element={<EmployeeGoals />} />
           <Route path="/employee/goals/create" element={<EmployeeCreateGoal />} />
+          <Route path="/employee/goals/edit/:id" element={<EmployeeCreateGoal />} />
           <Route path="/employee/goals/:id" element={<EmployeeGoalDetails />} />
           <Route path="/employee/checkins" element={<EmployeeQuarterlyReview />} />
           <Route path="/employee/progress" element={<EmployeeProgress />} />
@@ -73,6 +75,7 @@ export default function AppRoutes() {
           <Route path="/manager/approvals" element={<ManagerApprovals />} />
           <Route path="/manager/checkins" element={<EmployeeQuarterlyReview />} />
           <Route path="/manager/analytics" element={<ManagerAnalytics />} />
+          <Route path="/manager/reports" element={<ManagerReports />} />
           <Route path="/manager/notifications" element={<EmployeeNotifications />} />
           <Route path="/manager/review/:id" element={<EmployeeReview />} />
         </Route>

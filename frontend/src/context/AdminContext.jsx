@@ -1,111 +1,154 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { departments, allUsers, orgKPIs, auditLogs, reviewCycles } from '../data/orgData';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import * as adminApi from '../api/adminApi';
+import * as analyticsApi from '../api/analyticsApi';
 import toast from 'react-hot-toast';
 
 const AdminContext = createContext();
 
-const adminReducer = (state, action) => {
-  switch (action.type) {
-    case 'LOAD_STATE':
-      return { ...state, ...action.payload };
-    case 'UNLOCK_GOAL':
-      return {
-        ...state,
-        auditLogs: [
-          {
-            id: `AUD-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            actor: 'Current Admin',
-            action: 'UNLOCKED_GOAL',
-            target: action.payload.goalId,
-            details: action.payload.reason || 'Admin override'
-          },
-          ...state.auditLogs
-        ]
-      };
-    case 'UPDATE_USER_STATUS':
-      return {
-        ...state,
-        users: state.users.map(u => 
-          u.id === action.payload.userId ? { ...u, status: action.payload.status } : u
-        ),
-        auditLogs: [
-          {
-            id: `AUD-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            actor: 'Current Admin',
-            action: 'UPDATED_USER_STATUS',
-            target: action.payload.userId,
-            details: `Status changed to ${action.payload.status}`
-          },
-          ...state.auditLogs
-        ]
-      };
-    case 'UPDATE_CYCLE_STATUS':
-      return {
-        ...state,
-        cycles: state.cycles.map(c => 
-          c.id === action.payload.cycleId ? { ...c, status: action.payload.status } : c
-        ),
-        auditLogs: [
-          {
-            id: `AUD-${Date.now()}`,
-            timestamp: new Date().toISOString(),
-            actor: 'Current Admin',
-            action: 'UPDATED_CYCLE',
-            target: action.payload.cycleId,
-            details: `Cycle status changed to ${action.payload.status}`
-          },
-          ...state.auditLogs
-        ]
-      };
-    default:
-      return state;
-  }
-};
-
 export const AdminProvider = ({ children }) => {
-  const [state, dispatch] = useReducer(adminReducer, {
-    departments,
-    users: allUsers,
-    kpis: orgKPIs,
-    auditLogs,
-    cycles: reviewCycles
-  });
+  const [departments, setDepartments] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [kpis, setKpis] = useState({});
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [cycles, setCycles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Example persistence hook placeholder for FastAPI
-  useEffect(() => {
-    const saved = localStorage.getItem('thryve_admin_state');
-    if (saved) {
-      // dispatch({ type: 'LOAD_STATE', payload: JSON.parse(saved) });
+  /**
+   * Fetch org analytics (KPIs, users, departments)
+   */
+  const fetchOrgAnalytics = useCallback(async () => {
+    try {
+      const data = await adminApi.getOrgAnalytics();
+      if (data) {
+        setKpis(data.kpis || data);
+        setUsers(data.users || []);
+        setDepartments(data.departments || []);
+        setCycles(data.cycles || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch org analytics:', err);
+      // Fallback: try individual endpoints
+      try {
+        const deptData = await analyticsApi.getDepartmentAnalytics();
+        setDepartments(deptData || []);
+      } catch (e) { /* ignore */ }
+      try {
+        const overview = await analyticsApi.getOverview();
+        setKpis(overview || {});
+      } catch (e) { /* ignore */ }
     }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('thryve_admin_state', JSON.stringify(state));
-  }, [state]);
+  /**
+   * Fetch audit logs
+   */
+  const fetchAuditLogs = useCallback(async () => {
+    try {
+      const data = await adminApi.getAuditLogs({ limit: 100 });
+      setAuditLogs(data || []);
+    } catch (err) {
+      console.error('Failed to fetch audit logs:', err);
+      setAuditLogs([]);
+    }
+  }, []);
 
-  const unlockGoal = (goalId, reason) => {
-    dispatch({ type: 'UNLOCK_GOAL', payload: { goalId, reason } });
-    toast.success(`Goal ${goalId} unlocked successfully.`);
+  /**
+   * Load all admin data on mount
+   */
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await Promise.all([
+          fetchOrgAnalytics(),
+          fetchAuditLogs(),
+        ]);
+      } catch (err) {
+        setError('Failed to load admin data');
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
+  }, [fetchOrgAnalytics, fetchAuditLogs]);
+
+  /**
+   * Unlock a goal via backend API
+   */
+  const unlockGoal = async (goalId, reason = '') => {
+    try {
+      await adminApi.unlockGoal(goalId, reason);
+      toast.success(`Goal ${goalId} unlocked successfully.`);
+      await fetchAuditLogs(); // Refresh audit logs
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to unlock goal');
+    }
   };
 
-  const updateUserStatus = (userId, status) => {
-    dispatch({ type: 'UPDATE_USER_STATUS', payload: { userId, status } });
+  /**
+   * Update user role via backend API
+   */
+  const updateUserRole = async (userId, role) => {
+    try {
+      await adminApi.updateUserRole(userId, role);
+      setUsers(prev =>
+        prev.map(u => u.id === userId ? { ...u, role } : u)
+      );
+      toast.success(`User role updated to ${role}.`);
+      await fetchAuditLogs();
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to update user role');
+    }
+  };
+
+  /**
+   * Update user status (local + audit log refresh)
+   */
+  const updateUserStatus = async (userId, status) => {
+    setUsers(prev =>
+      prev.map(u => u.id === userId ? { ...u, status } : u)
+    );
     toast.success(`User status updated to ${status}.`);
   };
 
-  const updateCycleStatus = (cycleId, status) => {
-    dispatch({ type: 'UPDATE_CYCLE_STATUS', payload: { cycleId, status } });
-    toast.success(`Review cycle updated.`);
+  /**
+   * Update review cycle status
+   */
+  const updateCycleStatus = async (cycleId, status) => {
+    setCycles(prev =>
+      prev.map(c => c.id === cycleId ? { ...c, status } : c)
+    );
+    toast.success('Review cycle updated.');
+  };
+
+  /**
+   * Refresh all data
+   */
+  const refreshData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchOrgAnalytics(),
+      fetchAuditLogs(),
+    ]);
+    setLoading(false);
   };
 
   return (
     <AdminContext.Provider value={{
-      ...state,
+      departments,
+      users,
+      kpis,
+      auditLogs,
+      cycles,
+      loading,
+      error,
       unlockGoal,
+      updateUserRole,
       updateUserStatus,
-      updateCycleStatus
+      updateCycleStatus,
+      refreshData,
     }}>
       {children}
     </AdminContext.Provider>

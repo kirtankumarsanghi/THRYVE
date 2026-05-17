@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
-  Home, Target, Calendar, BarChart2, Bell, LogOut, Menu, X, ChevronRight
+  Home, Target, Calendar, BarChart2, Bell, LogOut, Menu, X, ChevronRight,
+  TrendingUp, Award, MessageSquare, BookOpen
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -10,6 +11,10 @@ const NAV_ITEMS = [
   { label: "My Goals",           path: "/employee/goals",     icon: Target },
   { label: "Quarterly Check-ins",path: "/employee/checkins",  icon: Calendar },
   { label: "My Progress",        path: "/employee/analytics", icon: BarChart2 },
+  { label: "My Development",     path: "/employee/development", icon: TrendingUp },
+  { label: "Achievements",       path: "/employee/achievements", icon: Award },
+  { label: "Feedback History",   path: "/employee/feedback", icon: MessageSquare },
+  { label: "My Calendar",        path: "/employee/calendar", icon: BookOpen },
   { label: "Notifications",      path: "/employee/notifications", icon: Bell },
 ];
 
@@ -129,7 +134,7 @@ export default function EmployeeLayout() {
 
           <div className="flex items-center gap-4 ml-auto">
             <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-blue-500/15 text-blue-300 border border-blue-500/25">
-              🔵 Employee Mode
+              Employee Mode
             </span>
             <button
               onClick={handleLogout}
@@ -149,3 +154,4 @@ export default function EmployeeLayout() {
     </div>
   );
 }
+

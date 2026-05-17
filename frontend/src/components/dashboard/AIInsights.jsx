@@ -1,8 +1,8 @@
 import { Sparkles } from 'lucide-react';
 import InsightCard from './InsightCard';
-import { mockInsights } from '../../data/mockData';
 
-export default function AIInsights() {
+export default function AIInsights({ insights = [] }) {
+  if (!insights.length) return null;
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-6">
@@ -11,7 +11,7 @@ export default function AIInsights() {
       </div>
       
       <div className="space-y-4">
-        {mockInsights.map(insight => (
+        {insights.map(insight => (
           <InsightCard key={insight.id} insight={insight} />
         ))}
       </div>

@@ -3,12 +3,13 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Home, Users, Calendar, Shield, Download,
-  Settings, LogOut, Menu, X, ChevronRight
+  Settings, LogOut, Menu, X, ChevronRight, Building2
 } from "lucide-react";
 
 const NAV_ITEMS = [
   { label: "Dashboard",       path: "/admin/dashboard",   icon: Home },
   { label: "User Management", path: "/admin/users",       icon: Users },
+  { label: "Departments",     path: "/admin/departments", icon: Building2 },
   { label: "Review Cycles",   path: "/admin/cycles",      icon: Calendar },
   { label: "Audit Logs",      path: "/admin/audit",       icon: Shield },
   { label: "Reports & Export",path: "/admin/analytics",   icon: Download },
@@ -140,7 +141,7 @@ export default function AdminLayout() {
 
           <div className="flex items-center gap-4 ml-auto">
             <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-red-500/15 text-red-300 border border-red-500/25">
-              🔴 Admin Mode
+              Admin Mode
             </span>
             <button
               onClick={handleLogout}
@@ -160,3 +161,4 @@ export default function AdminLayout() {
     </div>
   );
 }
+

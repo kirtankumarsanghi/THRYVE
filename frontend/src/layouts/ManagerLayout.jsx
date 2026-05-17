@@ -3,7 +3,8 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   Home, Users, CheckCircle2, ClipboardList, BarChart3,
-  Bell, LogOut, Menu, X, ChevronRight
+  Bell, LogOut, Menu, X, ChevronRight, Target, Calendar,
+  MessageSquare, Award, FileText, TrendingUp, Video
 } from "lucide-react";
 
 // In a real app this comes from context/API — mocked here
@@ -16,7 +17,13 @@ const NAV_ITEMS = [
     label: "Pending Approvals", path: "/manager/approvals",  icon: CheckCircle2,
     badge: PENDING_COUNT,
   },
+  { label: "Team Goals",        path: "/manager/team-goals", icon: Target },
+  { label: "1-on-1 Meetings",   path: "/manager/one-on-ones", icon: Video },
   { label: "Team Check-ins",    path: "/manager/checkins",   icon: ClipboardList },
+  { label: "Performance Insights", path: "/manager/insights", icon: TrendingUp },
+  { label: "Feedback & Recognition", path: "/manager/feedback", icon: Award },
+  { label: "Team Calendar",     path: "/manager/calendar",   icon: Calendar },
+  { label: "Reports & Export",  path: "/manager/reports",    icon: FileText },
   { label: "Team Analytics",    path: "/manager/analytics",  icon: BarChart3 },
   { label: "Notifications",     path: "/manager/notifications", icon: Bell },
 ];
@@ -148,7 +155,7 @@ export default function ManagerLayout() {
               </span>
             )}
             <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-purple-500/15 text-purple-300 border border-purple-500/25">
-              🟣 Manager Mode
+              Manager Mode
             </span>
             <button
               onClick={handleLogout}
@@ -168,3 +175,4 @@ export default function ManagerLayout() {
     </div>
   );
 }
+

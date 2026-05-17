@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Download, FileText, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { animations } from '../../styles/animations';
 
 export default function ExportModal({ isOpen, onClose }) {
   const [exportType, setExportType] = useState('full');
@@ -19,8 +21,11 @@ export default function ExportModal({ isOpen, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-card border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)]">
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <button className="absolute inset-0 bg-black/60 backdrop-blur-sm" aria-label="Close export dialog" onClick={onClose} />
+          <motion.div {...animations.modalTransition} role="dialog" aria-modal="true" aria-label="Export report dialog" className="surface-card w-full max-w-md overflow-hidden">
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <Download className="w-5 h-5 text-primary" /> Generate Report
@@ -95,7 +100,9 @@ export default function ExportModal({ isOpen, onClose }) {
             {isExporting ? 'Generating...' : 'Export CSV'}
           </button>
         </div>
-      </div>
-    </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 }

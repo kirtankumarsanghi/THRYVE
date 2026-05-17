@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const data = [
@@ -7,11 +8,11 @@ const data = [
   { name: 'Q4', achieved: 0, planned: 100 },
 ];
 
-export default function QuarterlyTrendChart() {
+function QuarterlyTrendChart() {
   return (
-    <div className="h-64 w-full mt-4">
+    <div className="h-64 w-full mt-4" role="img" aria-label="Quarterly achieved versus planned trend">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} barGap={8}>
+        <BarChart data={data} barGap={8} margin={{ top: 6, right: 8, left: -16, bottom: 4 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1E2A4A" vertical={false} />
           <XAxis dataKey="name" stroke="#6B7280" tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
           <YAxis stroke="#6B7280" tick={{fill: '#6B7280'}} axisLine={false} tickLine={false} />
@@ -26,3 +27,5 @@ export default function QuarterlyTrendChart() {
     </div>
   );
 }
+
+export default memo(QuarterlyTrendChart);

@@ -31,7 +31,7 @@ export default function OrganizationAnalytics() {
   ];
 
   return (
-    <main className="pt-8 px-margin-mobile md:px-margin-desktop pb-24 max-w-container-max mx-auto min-h-screen">
+    <main className="app-shell pt-8 pb-24 min-h-screen">
       <Breadcrumb />
       <BackButton to="/admin/dashboard" label="Back to Dashboard" />
 
@@ -121,15 +121,15 @@ export default function OrganizationAnalytics() {
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
         {/* Quarterly Trend */}
-        <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+        <div className="surface-card p-6">
           <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-primary">show_chart</span>
             Quarterly Performance Trend
           </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={quarterlyData.filter(d => d.goals > 0)}>
+            <LineChart data={quarterlyData.filter(d => d.goals > 0)} margin={{ top: 8, right: 12, left: -16, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis 
                 dataKey="quarter" 
@@ -170,21 +170,21 @@ export default function OrganizationAnalytics() {
         </div>
 
         {/* Department Performance */}
-        <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+        <div className="surface-card p-6">
           <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
             <span className="material-symbols-outlined text-secondary">bar_chart</span>
             Department Performance
           </h3>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={departmentData}>
+            <BarChart data={departmentData} margin={{ top: 8, right: 12, left: -16, bottom: 4 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
               <XAxis 
                 dataKey="name" 
                 stroke="#94a3b8"
                 style={{ fontSize: '11px' }}
-                angle={-45}
+                angle={-30}
                 textAnchor="end"
-                height={80}
+                height={68}
               />
               <YAxis 
                 stroke="#94a3b8"
@@ -207,12 +207,12 @@ export default function OrganizationAnalytics() {
       </div>
 
       {/* Department Details Table */}
-      <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6 mb-8">
+      <div className="surface-card p-6 mb-8">
         <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
           <span className="material-symbols-outlined text-tertiary">corporate_fare</span>
           Department Breakdown
         </h3>
-        <div className="overflow-x-auto">
+        <div className="responsive-table">
           <table className="w-full">
             <thead className="bg-surface-container/50 border-b border-outline-variant/10">
               <tr>
@@ -273,7 +273,7 @@ export default function OrganizationAnalytics() {
       </div>
 
       {/* Top Performers */}
-      <div className="bg-[#0F172A] border border-white/5 rounded-xl p-6">
+      <div className="surface-card p-6">
         <h3 className="font-title-md text-title-md text-on-surface mb-6 flex items-center gap-2">
           <span className="material-symbols-outlined text-secondary" style={{ fontVariationSettings: "'FILL' 1" }}>emoji_events</span>
           Top Performers

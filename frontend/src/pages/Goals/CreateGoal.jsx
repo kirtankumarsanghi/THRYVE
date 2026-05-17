@@ -1,236 +1,148 @@
-import React, { useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import toast from 'react-hot-toast';
-import { ArrowLeft, Save, Sparkles } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import PageContainer from '../../components/common/PageContainer';
 import { useGoals } from '../../context/GoalContext';
-import { validateGoals } from '../../utils/goalValidation';
 
 const goalSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters').max(100),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
-  thrustArea: z.string().min(1, 'Thrust Area is required'),
-  target: z.coerce.number().min(1, 'Target must be greater than 0'),
-  uom: z.string().min(1, 'Unit of Measurement is required'),
-  weightage: z.coerce.number().min(10, 'Minimum weightage is 10%').max(100, 'Maximum weightage is 100%'),
-  quarter: z.string().min(1, 'Quarter is required'),
-  dueDate: z.string().min(1, 'Due Date is required'),
-  status: z.string().optional(),
-  progress: z.coerce.number().optional(),
-  actual: z.coerce.number().optional(),
+  title: z.string().min(3),
+  description: z.string().optional(),
+  strategic_area: z.string().optional(),
+  quarter: z.enum(['Q1', 'Q2', 'Q3', 'Q4']),
+  target_value: z.coerce.number().min(0),
+  achieved_value: z.coerce.number().min(0).optional(),
+  weightage: z.coerce.number().min(10).max(100),
+  uom_type: z.enum(['Numeric', 'Percentage', 'Timeline', 'Zero-based']),
+  uom_direction: z.enum(['Higher is Better', 'Lower is Better']),
+  target_date: z.string().optional(),
 });
 
 export default function CreateGoal() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { addGoal, updateGoal, goals } = useGoals();
-  const isEditing = !!id;
-  const existingGoal = isEditing ? goals.find(g => g.id === id) : null;
-  
-  const { register, handleSubmit, watch, reset, formState: { errors, isSubmitting } } = useForm({
+  const existingGoal = id ? goals.find((g) => String(g.id) === String(id)) : null;
+
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting }, reset } = useForm({
     resolver: zodResolver(goalSchema),
     defaultValues: {
-      status: 'Draft',
+      quarter: 'Q1',
       weightage: 10,
+      uom_type: 'Numeric',
+      uom_direction: 'Higher is Better',
+      achieved_value: 0,
     }
   });
 
-  useEffect(() => {
-    if (isEditing && existingGoal) {
-      if (existingGoal.locked) {
-        toast.error('This goal is locked by a manager and cannot be edited.');
-        navigate('/goals');
-        return;
-      }
-      reset(existingGoal);
-    } else if (isEditing && !existingGoal) {
-      toast.error('Goal not found');
-      navigate('/goals');
-    }
-  }, [isEditing, existingGoal, reset, navigate]);
+  const uomType = watch('uom_type');
 
-  const weightage = watch('weightage') || 0;
-  
+  React.useEffect(() => {
+    if (existingGoal) {
+      reset({
+        ...existingGoal,
+        target_date: existingGoal.target_date || '',
+      });
+    }
+  }, [existingGoal, reset]);
+
   const onSubmit = async (data) => {
-    const testGoals = isEditing 
-      ? goals.map(g => g.id === id ? { ...g, ...data, weightage: Number(data.weightage) } : g)
-      : [...goals, { ...data, weightage: Number(data.weightage) }];
-      
-    const validation = validateGoals(testGoals);
-    
-    if (!validation.isValid) {
-      validation.errors.forEach(err => toast.error(err));
-      return;
+    const payload = {
+      ...data,
+      target_date: data.target_date || null,
+      description: data.description || '',
+      strategic_area: data.strategic_area || '',
+      status: existingGoal?.status || 'Not Started',
+    };
+    if (existingGoal) {
+      await updateGoal(existingGoal.id, payload);
+    } else {
+      await addGoal(payload);
     }
-    
-    if (validation.warnings.length > 0) {
-      validation.warnings.forEach(warn => toast.custom((t) => (
-        <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 p-4 rounded-lg shadow-lg flex items-start gap-3">
-          <Sparkles className="w-5 h-5 flex-shrink-0" />
-          <p className="text-sm font-medium">{warn}</p>
-        </div>
-      )));
-    }
-
-    try {
-      if (isEditing) {
-        updateGoal({ ...existingGoal, ...data, weightage: Number(data.weightage) });
-        toast.success('Strategic goal updated successfully');
-      } else {
-        addGoal(data);
-        toast.success('Strategic goal created successfully');
-      }
-      navigate('/goals');
-    } catch (error) {
-      toast.error(`Failed to ${isEditing ? 'update' : 'create'} goal`);
-    }
+    navigate('/employee/goals');
   };
 
   return (
     <PageContainer>
       <div className="max-w-4xl mx-auto">
-        <button 
-          onClick={() => navigate('/goals')}
-          className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors text-sm font-semibold"
-        >
+        <button onClick={() => navigate('/employee/goals')} className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 text-sm font-semibold">
           <ArrowLeft className="w-4 h-4" /> Back to Goals
         </button>
-        
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">{isEditing ? 'Edit Strategic Goal' : 'Create Strategic Goal'}</h1>
-          <p className="text-gray-400">{isEditing ? 'Update your enterprise objective details and alignment.' : 'Define a new objective aligned with enterprise thrust areas.'}</p>
-        </div>
+
+        <h1 className="text-3xl font-bold text-white mb-6">{existingGoal ? 'Edit Goal' : 'Create Goal'}</h1>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Goal Title</label>
-                <input 
-                  {...register('title')}
-                  className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                  placeholder="e.g. Expand Enterprise Market Share"
-                />
-                {errors.title && <p className="text-red-400 text-xs mt-1.5">{errors.title.message}</p>}
-              </div>
+          <div className="bg-card border border-border rounded-2xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Goal Title</label>
+              <input {...register('title')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
+              {errors.title && <p className="text-red-400 text-xs mt-1">Required</p>}
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Description</label>
-                <textarea 
-                  {...register('description')}
-                  rows="3"
-                  className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none"
-                  placeholder="Detail the specific outcomes and approach..."
-                />
-                {errors.description && <p className="text-red-400 text-xs mt-1.5">{errors.description.message}</p>}
-              </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Description</label>
+              <textarea {...register('description')} rows="3" className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
+            </div>
 
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Strategic Area</label>
+              <input {...register('strategic_area')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Quarter</label>
+              <select {...register('quarter')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white">
+                <option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">UoM Type</label>
+              <select {...register('uom_type')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white">
+                <option value="Numeric">Numeric</option>
+                <option value="Percentage">Percentage</option>
+                <option value="Timeline">Timeline</option>
+                <option value="Zero-based">Zero-based</option>
+              </select>
+            </div>
+
+            {(uomType === 'Numeric' || uomType === 'Percentage') && (
               <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Thrust Area</label>
-                <select 
-                  {...register('thrustArea')}
-                  className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none"
-                >
-                  <option value="">Select Thrust Area</option>
-                  <option value="Market Expansion">Market Expansion</option>
-                  <option value="Product Innovation">Product Innovation</option>
-                  <option value="Operational Excellence">Operational Excellence</option>
-                  <option value="Customer Success">Customer Success</option>
+                <label className="block text-sm font-semibold text-gray-300 mb-2">Direction</label>
+                <select {...register('uom_direction')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white">
+                  <option value="Higher is Better">Higher is Better</option>
+                  <option value="Lower is Better">Lower is Better</option>
                 </select>
-                {errors.thrustArea && <p className="text-red-400 text-xs mt-1.5">{errors.thrustArea.message}</p>}
               </div>
+            )}
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Target Quarter</label>
-                <select 
-                  {...register('quarter')}
-                  className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none"
-                >
-                  <option value="">Select Quarter</option>
-                  <option value="Q1 2024">Q1 2024</option>
-                  <option value="Q2 2024">Q2 2024</option>
-                  <option value="Q3 2024">Q3 2024</option>
-                  <option value="Q4 2024">Q4 2024</option>
-                </select>
-                {errors.quarter && <p className="text-red-400 text-xs mt-1.5">{errors.quarter.message}</p>}
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Target Value</label>
+              <input type="number" step="0.01" {...register('target_value')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
+            </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Target Value</label>
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <input 
-                      type="number"
-                      {...register('target')}
-                      className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                      placeholder="e.g. 50"
-                    />
-                  </div>
-                  <div className="w-1/3">
-                    <input 
-                      {...register('uom')}
-                      className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
-                      placeholder="UoM (%, $, qty)"
-                    />
-                  </div>
-                </div>
-                {(errors.target || errors.uom) && (
-                  <p className="text-red-400 text-xs mt-1.5">Valid target and unit required.</p>
-                )}
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Achieved Value</label>
+              <input type="number" step="0.01" {...register('achieved_value')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
+            </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-300 mb-2">Due Date</label>
-                <input 
-                  type="date"
-                  {...register('dueDate')}
-                  className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all [color-scheme:dark]"
-                />
-                {errors.dueDate && <p className="text-red-400 text-xs mt-1.5">{errors.dueDate.message}</p>}
-              </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Target Date</label>
+              <input type="date" {...register('target_date')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white [color-scheme:dark]" />
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
-                  Weightage Allocation ({weightage}%)
-                </label>
-                <div className="flex items-center gap-4">
-                  <input 
-                    type="range"
-                    min="10"
-                    max="100"
-                    step="5"
-                    {...register('weightage')}
-                    className="w-full h-2 bg-dark rounded-lg appearance-none cursor-pointer accent-primary"
-                  />
-                  <div className="w-16 px-3 py-1.5 bg-dark border border-border rounded-lg text-center text-white font-semibold">
-                    {weightage}%
-                  </div>
-                </div>
-                {errors.weightage && <p className="text-red-400 text-xs mt-1.5">{errors.weightage.message}</p>}
-              </div>
-
+            <div>
+              <label className="block text-sm font-semibold text-gray-300 mb-2">Weightage (%)</label>
+              <input type="number" {...register('weightage')} className="w-full bg-dark border border-border rounded-lg px-4 py-2.5 text-white" />
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-4">
-            <button 
-              type="button"
-              onClick={() => navigate('/goals')}
-              className="px-6 py-2.5 rounded-lg font-semibold text-gray-300 hover:text-white transition-colors"
-            >
-              Cancel
-            </button>
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold transition-colors shadow-[0_0_15px_rgba(139,127,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Save className="w-4 h-4" />
-              {isSubmitting ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Goal'}
+          <div className="flex justify-end">
+            <button type="submit" disabled={isSubmitting} className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 rounded-lg font-semibold">
+              <Save className="w-4 h-4" /> {isSubmitting ? 'Saving...' : 'Create Goal'}
             </button>
           </div>
         </form>

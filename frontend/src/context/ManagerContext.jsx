@@ -1,92 +1,127 @@
-import { createContext, useContext, useReducer, useEffect } from 'react';
-import { teamMembers, pendingApprovalsData, departmentStats } from '../data/teamData';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import * as approvalsApi from '../api/approvalsApi';
+import * as analyticsApi from '../api/analyticsApi';
+import toast from 'react-hot-toast';
 
 const ManagerContext = createContext();
 
-const managerReducer = (state, action) => {
-  switch (action.type) {
-    case 'APPROVE_ITEM':
-      return {
-        ...state,
-        pendingApprovals: state.pendingApprovals.filter(item => item.id !== action.payload)
-      };
-    case 'REJECT_ITEM':
-      return {
-        ...state,
-        pendingApprovals: state.pendingApprovals.filter(item => item.id !== action.payload)
-      };
-    case 'RETURN_FOR_REWORK':
-      return {
-        ...state,
-        pendingApprovals: state.pendingApprovals.filter(item => item.id !== action.payload.id)
-      };
-    case 'ADD_COMMENT':
-      return {
-        ...state,
-        pendingApprovals: state.pendingApprovals.map(item => {
-          if (item.id === action.payload.approvalId) {
-            return {
-              ...item,
-              comments: [...(item.comments || []), action.payload.comment]
-            };
-          }
-          return item;
-        })
-      };
-    default:
-      return state;
-  }
-};
-
 export const ManagerProvider = ({ children }) => {
-  const loadInitialState = () => {
-    const saved = localStorage.getItem('thryve_manager_state');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        // Fallback
-      }
+  const [pendingApprovals, setPendingApprovals] = useState([]);
+  const [team, setTeam] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  /**
+   * Fetch pending approvals from backend
+   */
+  const fetchPendingApprovals = useCallback(async () => {
+    try {
+      const data = await approvalsApi.getPendingApprovals();
+      setPendingApprovals(data || []);
+    } catch (err) {
+      console.error('Failed to fetch pending approvals:', err);
+      setPendingApprovals([]);
     }
-    return {
-      team: teamMembers,
-      pendingApprovals: pendingApprovalsData,
-      departments: departmentStats,
+  }, []);
+
+  /**
+   * Fetch team analytics from backend
+   */
+  const fetchTeamData = useCallback(async () => {
+    try {
+      const data = await analyticsApi.getTeamAnalytics();
+      setTeam(data || []);
+    } catch (err) {
+      console.error('Failed to fetch team analytics:', err);
+      setTeam([]);
+    }
+  }, []);
+
+  /**
+   * Fetch department analytics from backend
+   */
+  const fetchDepartments = useCallback(async () => {
+    try {
+      const data = await analyticsApi.getDepartmentAnalytics();
+      setDepartments(data || []);
+    } catch (err) {
+      console.error('Failed to fetch department analytics:', err);
+      setDepartments([]);
+    }
+  }, []);
+
+  /**
+   * Load all manager data on mount
+   */
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await Promise.all([
+          fetchPendingApprovals(),
+          fetchTeamData(),
+          fetchDepartments(),
+        ]);
+      } catch (err) {
+        setError('Failed to load manager data');
+      } finally {
+        setLoading(false);
+      }
     };
+    loadData();
+  }, [fetchPendingApprovals, fetchTeamData, fetchDepartments]);
+
+  /**
+   * Approve a goal via backend API
+   */
+  const approveItem = async (goalId, comment = '') => {
+    try {
+      await approvalsApi.approveGoal(goalId, comment);
+      setPendingApprovals(prev => prev.filter(item => item.id !== goalId));
+      toast.success('Goal approved successfully');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to approve goal');
+    }
   };
 
-  const [state, dispatch] = useReducer(managerReducer, null, loadInitialState);
+  /**
+   * Reject a goal via backend API
+   */
+  const rejectItem = async (goalId, comment = '') => {
+    try {
+      await approvalsApi.rejectGoal(goalId, comment);
+      setPendingApprovals(prev => prev.filter(item => item.id !== goalId));
+      toast.success('Goal rejected');
+    } catch (err) {
+      toast.error(err?.response?.data?.detail || 'Failed to reject goal');
+    }
+  };
 
-  useEffect(() => {
-    localStorage.setItem('thryve_manager_state', JSON.stringify(state));
-  }, [state]);
-
-  const approveItem = (id) => dispatch({ type: 'APPROVE_ITEM', payload: id });
-  const rejectItem = (id) => dispatch({ type: 'REJECT_ITEM', payload: id });
-  const returnForRework = (id, reason) => dispatch({ type: 'RETURN_FOR_REWORK', payload: { id, reason } });
-  
-  const addCommentToApproval = (approvalId, commentText, author = "Current Manager") => {
-    dispatch({ 
-      type: 'ADD_COMMENT', 
-      payload: { 
-        approvalId, 
-        comment: {
-          id: `COM-${Date.now()}`,
-          author,
-          text: commentText,
-          timestamp: new Date().toISOString()
-        }
-      } 
-    });
+  /**
+   * Refresh all data
+   */
+  const refreshData = async () => {
+    setLoading(true);
+    await Promise.all([
+      fetchPendingApprovals(),
+      fetchTeamData(),
+      fetchDepartments(),
+    ]);
+    setLoading(false);
   };
 
   return (
-    <ManagerContext.Provider value={{ 
-      ...state, 
-      approveItem, 
-      rejectItem, 
-      returnForRework, 
-      addCommentToApproval 
+    <ManagerContext.Provider value={{
+      team,
+      pendingApprovals,
+      departments,
+      loading,
+      error,
+      approveItem,
+      rejectItem,
+      refreshData,
     }}>
       {children}
     </ManagerContext.Provider>
