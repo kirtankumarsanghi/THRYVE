@@ -10,11 +10,30 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./thryve.db")
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
+# Add SSL parameter to PostgreSQL URL if not already present
+if "postgresql" in DATABASE_URL and "sslmode" not in DATABASE_URL:
+    separator = "&" if "?" in DATABASE_URL else "?"
+    DATABASE_URL = f"{DATABASE_URL}{separator}sslmode=require"
+
+# Configure connection arguments
+connect_args = {}
+if "sqlite" in DATABASE_URL:
+    connect_args = {"check_same_thread": False}
+elif "postgresql" in DATABASE_URL:
+    # Additional connection settings for PostgreSQL
+    connect_args = {
+        "connect_timeout": 10,
+        "options": "-c timezone=utc"
+    }
+
 engine = create_engine(
     DATABASE_URL,
-    connect_args={"check_same_thread": False} if "sqlite" in DATABASE_URL else {},
+    connect_args=connect_args,
     pool_pre_ping=True,  # Verify connections before using
     pool_recycle=300,  # Recycle connections after 5 minutes
+    pool_size=10,  # Maximum number of connections in the pool
+    max_overflow=20,  # Maximum overflow connections
+    echo=False,  # Set to True for SQL query logging
 )
 
 SessionLocal = sessionmaker(
