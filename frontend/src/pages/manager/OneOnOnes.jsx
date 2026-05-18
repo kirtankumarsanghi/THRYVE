@@ -5,6 +5,23 @@ import { Calendar, Video, Clock, MessageSquare } from "lucide-react";
 import toast from "react-hot-toast";
 import { createMeeting, listMeetings, updateMeeting } from "../../api/meetingsApi";
 
+const FALLBACK_STORAGE_KEY = "thryve_one_on_one_meetings";
+
+function loadFallbackMeetings() {
+  try {
+    const raw = localStorage.getItem(FALLBACK_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFallbackMeetings(meetings) {
+  localStorage.setItem(FALLBACK_STORAGE_KEY, JSON.stringify(meetings));
+}
+
 export default function OneOnOnes() {
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,12 +31,35 @@ export default function OneOnOnes() {
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [meetingDateTime, setMeetingDateTime] = useState("");
   const [meetingNotes, setMeetingNotes] = useState("");
+  const [useFallbackStorage, setUseFallbackStorage] = useState(false);
 
   const loadPageData = async () => {
     try {
-      const [teamData, meetingData] = await Promise.all([getTeamAnalytics(), listMeetings()]);
-      setTeam(Array.isArray(teamData) ? teamData : []);
-      setMeetings(Array.isArray(meetingData) ? meetingData : []);
+      const [teamResult, meetingResult] = await Promise.allSettled([
+        getTeamAnalytics(),
+        listMeetings(),
+      ]);
+
+      if (teamResult.status === "fulfilled") {
+        setTeam(Array.isArray(teamResult.value) ? teamResult.value : []);
+      } else {
+        console.error("Failed to load team data:", teamResult.reason);
+        setTeam([]);
+      }
+
+      if (meetingResult.status === "fulfilled") {
+        setUseFallbackStorage(false);
+        setMeetings(Array.isArray(meetingResult.value) ? meetingResult.value : []);
+      } else {
+        const status = meetingResult.reason?.response?.status;
+        if (status === 404) {
+          setUseFallbackStorage(true);
+          setMeetings(loadFallbackMeetings());
+          toast("Backend meetings API not deployed yet. Using local schedule temporarily.");
+        } else {
+          throw meetingResult.reason;
+        }
+      }
     } catch (error) {
       console.error("Failed to load 1-on-1 data:", error);
       toast.error("Could not load 1-on-1 scheduling data.");
@@ -111,22 +151,45 @@ export default function OneOnOnes() {
         (m) => Number(m.employee_id) === employeeId && new Date(m.starts_at) >= new Date(),
       );
 
-      if (existingUpcoming) {
-        await updateMeeting(existingUpcoming.id, {
-          starts_at: startsAt,
-          notes: meetingNotes,
-        });
-        toast.success(`1-on-1 rescheduled with ${employee.employee_name}`);
+      if (useFallbackStorage) {
+        let updated;
+        if (existingUpcoming) {
+          updated = meetings.map((m) =>
+            m.id === existingUpcoming.id ? { ...m, starts_at: startsAt, notes: meetingNotes } : m,
+          );
+          toast.success(`1-on-1 rescheduled with ${employee.employee_name}`);
+        } else {
+          updated = [
+            {
+              id: Date.now(),
+              employee_id: employeeId,
+              employee_name: employee.employee_name,
+              starts_at: startsAt,
+              notes: meetingNotes,
+            },
+            ...meetings,
+          ];
+          toast.success(`1-on-1 scheduled with ${employee.employee_name}`);
+        }
+        setMeetings(updated);
+        saveFallbackMeetings(updated);
       } else {
-        await createMeeting({
-          employee_id: employeeId,
-          starts_at: startsAt,
-          notes: meetingNotes,
-        });
-        toast.success(`1-on-1 scheduled with ${employee.employee_name}`);
+        if (existingUpcoming) {
+          await updateMeeting(existingUpcoming.id, {
+            starts_at: startsAt,
+            notes: meetingNotes,
+          });
+          toast.success(`1-on-1 rescheduled with ${employee.employee_name}`);
+        } else {
+          await createMeeting({
+            employee_id: employeeId,
+            starts_at: startsAt,
+            notes: meetingNotes,
+          });
+          toast.success(`1-on-1 scheduled with ${employee.employee_name}`);
+        }
+        await loadPageData();
       }
-
-      await loadPageData();
       closeScheduleModal();
     } catch (error) {
       console.error("Failed to save meeting:", error);
@@ -255,7 +318,9 @@ export default function OneOnOnes() {
               </div>
               <h3 className="text-white font-bold mb-2">Shared Scheduling Enabled</h3>
               <p className="text-sm text-gray-300 mb-4">
-                Meetings are now stored on the server, so your full team can access the same schedule across sessions and devices.
+                {useFallbackStorage
+                  ? "Running in local fallback mode until backend meetings API is deployed."
+                  : "Meetings are stored on the server and shared across sessions and devices."}
               </p>
             </div>
           </div>
