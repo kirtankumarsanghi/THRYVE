@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -6,7 +6,6 @@ import { useNavigate, Navigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, Target, Users, Shield, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { healthAuth } from "../../api/authApi";
 import ThryveLogo from "../../components/branding/ThryveLogo";
 
 const loginSchema = z.object({
@@ -26,7 +25,6 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState(null);
   const [apiError, setApiError] = useState("");
-  const [backendStatus, setBackendStatus] = useState("checking");
 
   const {
     register,
@@ -39,24 +37,6 @@ export default function Login() {
   if (!loading && token && currentRole) {
     return <Navigate to={`/${currentRole}/dashboard`} replace />;
   }
-
-  useEffect(() => {
-    let mounted = true;
-    const checkBackend = async () => {
-      try {
-        await healthAuth();
-        if (mounted) setBackendStatus("up");
-      } catch {
-        if (mounted) setBackendStatus("down");
-      }
-    };
-    checkBackend();
-    const timer = setInterval(checkBackend, 15000);
-    return () => {
-      mounted = false;
-      clearInterval(timer);
-    };
-  }, []);
 
   const onSubmit = async (data) => {
     setIsSubmitting(true);
@@ -309,13 +289,6 @@ export default function Login() {
             {/* Subtle inner highlight */}
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
 
-            {backendStatus === "checking" && (
-              <div className="mb-5 flex items-center gap-2 text-slate-400 text-xs font-medium">
-                <Zap size={14} className="text-blue-400" />
-                <span>Preparing secure connection...</span>
-              </div>
-            )}
-
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
               <div>
                 <label className="block text-[13px] font-semibold text-slate-300 mb-2">Email Address</label>
@@ -386,12 +359,6 @@ export default function Login() {
             </form>
 
             <div className="mt-8 pt-8 border-t border-white/5">
-              {backendStatus === "down" && (
-                <div className="mb-5 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-medium">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/80" />
-                  <span>Server is warming up. Sign in may take a few extra seconds.</span>
-                </div>
-              )}
               <div className="flex items-center gap-2 mb-5 justify-center">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Demo Access</span>
               </div>

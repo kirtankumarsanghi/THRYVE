@@ -15,25 +15,37 @@ if "postgresql" in DATABASE_URL and "sslmode" not in DATABASE_URL:
     separator = "&" if "?" in DATABASE_URL else "?"
     DATABASE_URL = f"{DATABASE_URL}{separator}sslmode=require"
 
-# Configure connection arguments
+# Configure connection arguments and engine kwargs
 connect_args = {}
+engine_kwargs = {
+    "pool_pre_ping": True,  # Verify connections before using
+    "pool_recycle": 300,  # Recycle connections after 5 minutes
+    "echo": False,  # Set to True for SQL query logging
+}
+
 if "sqlite" in DATABASE_URL:
     connect_args = {"check_same_thread": False}
-elif "postgresql" in DATABASE_URL:
+else:
+    # Pool sizing is useful for client/server DBs (PostgreSQL/MySQL/etc.)
+    engine_kwargs.update(
+        {
+            "pool_size": 10,  # Maximum number of connections in the pool
+            "max_overflow": 20,  # Maximum overflow connections
+            "pool_timeout": 30,
+        }
+    )
+
+if "postgresql" in DATABASE_URL:
     # Additional connection settings for PostgreSQL
     connect_args = {
         "connect_timeout": 10,
-        "options": "-c timezone=utc"
+        "options": "-c timezone=utc",
     }
 
 engine = create_engine(
     DATABASE_URL,
     connect_args=connect_args,
-    pool_pre_ping=True,  # Verify connections before using
-    pool_recycle=300,  # Recycle connections after 5 minutes
-    pool_size=10,  # Maximum number of connections in the pool
-    max_overflow=20,  # Maximum overflow connections
-    echo=False,  # Set to True for SQL query logging
+    **engine_kwargs,
 )
 
 SessionLocal = sessionmaker(

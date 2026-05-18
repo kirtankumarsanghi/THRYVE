@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 import os
+import time
 
 from app.core.database import Base, engine, SessionLocal
 from app.api.api_router import router
@@ -16,9 +17,6 @@ from app.models.quarterly_window import QuarterlyWindow  # noqa: F401
 from app.models.department import Department  # noqa: F401
 from app.models.escalation import EscalationLog  # noqa: F401
 from app.utils.quarterly_windows import WINDOW_CONFIG
-
-# Create tables
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="THRYVE API", version="1.0.0")
 
@@ -43,6 +41,7 @@ def get_cors_origins():
 
     return default_origins
 
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=get_cors_origins(),
@@ -53,6 +52,22 @@ app.add_middleware(
 )
 
 app.include_router(router)
+
+
+def initialize_database(max_retries: int = 8, retry_delay_seconds: int = 3) -> bool:
+    """
+    Initialize database schema with retry protection.
+    Prevents deploy crashes when DB is not immediately ready.
+    """
+    for attempt in range(1, max_retries + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            return True
+        except Exception as exc:
+            print(f"[startup] Database init attempt {attempt}/{max_retries} failed: {exc}")
+            if attempt < max_retries:
+                time.sleep(retry_delay_seconds)
+    return False
 
 
 def ensure_demo_users():
@@ -179,17 +194,28 @@ def ensure_legacy_schema_columns():
 @app.on_event("startup")
 def startup_bootstrap():
     """
-    Startup tasks - run schema migrations if possible
-    If database connection fails, application will still start
-    Use /seed/seed-database endpoint to initialize data after deployment
+    Startup tasks.
+    If DB is temporarily unavailable during deploy, app still starts and retries happened.
     """
+    db_ready = initialize_database()
+    if not db_ready:
+        print("[startup] Database not ready after retries. Running in degraded mode.")
+        return
+
     try:
         ensure_legacy_schema_columns()
-    except Exception as e:
-        # Don't crash on startup - database might not be ready yet
-        print(f"⚠️  Startup bootstrap skipped: {e}")
-        print("✅ Application started successfully")
-        print("📝 Use /seed/seed-database endpoint to initialize database")
+    except Exception as exc:
+        print(f"[startup] Legacy schema bootstrap skipped: {exc}")
+
+    try:
+        ensure_default_quarterly_windows()
+    except Exception as exc:
+        print(f"[startup] Quarterly window seed skipped: {exc}")
+
+    try:
+        ensure_demo_users()
+    except Exception as exc:
+        print(f"[startup] Demo user seed skipped: {exc}")
 
 
 @app.get("/")
