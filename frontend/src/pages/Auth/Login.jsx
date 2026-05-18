@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, Target, Users, Shield, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { healthAuth } from "../../api/authApi";
+import { API_BASE_URL } from "../../api/axios";
 import ThryveLogo from "../../components/branding/ThryveLogo";
 
 const loginSchema = z.object({
@@ -59,11 +60,6 @@ export default function Login() {
   }, []);
 
   const onSubmit = async (data) => {
-    if (backendStatus !== "up") {
-      setApiError("Backend is not reachable. Start the API server, then try again.");
-      return;
-    }
-
     setIsSubmitting(true);
     setApiError("");
     const result = await login(data.email, data.password);
@@ -77,11 +73,6 @@ export default function Login() {
   };
 
   const handleDemoLogin = async (demo) => {
-    if (backendStatus !== "up") {
-      setApiError("Backend is not reachable. Start the API server, then try again.");
-      return;
-    }
-
     setDemoLoading(demo.role);
     setApiError("");
 
@@ -325,7 +316,7 @@ export default function Login() {
                 <p className="text-[13px] text-amber-200/90 leading-relaxed font-medium">
                   {backendStatus === "checking"
                     ? "Checking backend connectivity..."
-                    : "Backend is offline. Please start the API server on port 8000."}
+                    : `Backend may be waking up or unreachable at ${API_BASE_URL}. You can still try signing in.`}
                 </p>
               </div>
             )}
@@ -388,7 +379,7 @@ export default function Login() {
 
               <button
                 type="submit"
-                disabled={isSubmitting || backendStatus !== "up"}
+                disabled={isSubmitting}
                 className="w-full flex items-center justify-center gap-2 bg-white text-black hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3.5 rounded-xl transition-all mt-4 text-[15px] shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-[0.98]"
               >
                 {isSubmitting ? (
@@ -410,7 +401,7 @@ export default function Login() {
                     <button
                       key={demo.role}
                       onClick={() => handleDemoLogin(demo)}
-                      disabled={demoLoading !== null || backendStatus !== "up"}
+                      disabled={demoLoading !== null}
                       className="group flex flex-col items-center justify-center gap-2.5 bg-black/20 hover:bg-black/40 border border-white/[0.05] hover:border-white/10 rounded-xl p-3 transition-all disabled:opacity-50"
                     >
                       {isLoading ? (

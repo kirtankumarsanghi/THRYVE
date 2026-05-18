@@ -21,13 +21,13 @@ const getApiUrl = () => {
   return 'http://127.0.0.1:8000';
 };
 
-const BASE_URL = getApiUrl();
+export const API_BASE_URL = getApiUrl();
 
-console.log('🔗 API URL:', BASE_URL);
+console.log('[API] Base URL:', API_BASE_URL);
 
 // Create axios instance with default config
 const API = axios.create({
-  baseURL: BASE_URL,
+  baseURL: API_BASE_URL,
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
