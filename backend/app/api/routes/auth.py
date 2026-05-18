@@ -10,12 +10,14 @@ from app.models.user import User
 
 from app.schemas.auth import (
     RegisterSchema,
-    LoginSchema
+    LoginSchema,
+    DemoLoginSchema,
 )
 
 from app.services.auth_service import (
     register_user,
-    login_user
+    login_user,
+    login_demo_user,
 )
 
 router = APIRouter()
@@ -52,6 +54,28 @@ def login(
         raise HTTPException(
             status_code=401,
             detail="Invalid credentials"
+        )
+
+    if response.get("error"):
+        raise HTTPException(
+            status_code=403,
+            detail=response["error"]
+        )
+
+    return response
+
+
+@router.post("/demo-login")
+def demo_login(
+    data: DemoLoginSchema,
+    db: Session = Depends(get_db)
+):
+    response = login_demo_user(data.role, db)
+
+    if not response:
+        raise HTTPException(
+            status_code=401,
+            detail="Demo login failed"
         )
 
     if response.get("error"):

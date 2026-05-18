@@ -75,6 +75,37 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const demoLogin = async (role) => {
+    try {
+      setLoading(true);
+      const response = await authApi.demoLogin(role);
+
+      const { access_token, user: userData } = response;
+      authApi.storeAuthData(access_token, userData);
+      localStorage.setItem('role', userData.role);
+
+      setToken(access_token);
+      setUser(userData);
+      setRole(userData.role);
+
+      toast.success(`Demo login successful: ${userData.role}`);
+      return { ok: true, user: userData };
+    } catch (error) {
+      console.error("Demo login failed:", error);
+      const isTimeout = error.code === "ECONNABORTED";
+      const isNetwork = !error.response;
+      const errorMessage = isTimeout
+        ? "Demo login timed out. Please retry in a few seconds."
+        : isNetwork
+        ? "Unable to reach backend for demo login."
+        : error.response?.data?.detail || "Demo login failed.";
+      toast.error(errorMessage);
+      return { ok: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   /**
    * Register new user
    * @param {Object} userData - User registration data
@@ -152,6 +183,7 @@ export function AuthProvider({ children }) {
     token,
     loading,
     login,
+    demoLogin,
     register,
     logout,
     isAuthenticated,

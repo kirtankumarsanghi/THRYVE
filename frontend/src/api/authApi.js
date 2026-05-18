@@ -14,6 +14,11 @@ export const login = async (email, password) => {
   return response.data;
 };
 
+export const demoLogin = async (role) => {
+  const response = await axios.post('/auth/demo-login', { role });
+  return response.data;
+};
+
 /**
  * Register new user
  * @param {Object} userData - User registration data

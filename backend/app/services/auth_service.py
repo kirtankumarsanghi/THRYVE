@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 import os
+from types import SimpleNamespace
 
 from app.models.user import User
 
@@ -31,6 +32,12 @@ DEMO_USERS = {
         "department": "Executive",
         "status": "active",
     },
+}
+
+DEMO_ROLE_TO_EMAIL = {
+    "employee": "employee@thryve.com",
+    "manager": "manager@thryve.com",
+    "admin": "admin@thryve.com",
 }
 
 
@@ -166,3 +173,15 @@ def login_user(data, db: Session):
             "role": user.role
         }
     }
+
+
+def login_demo_user(role: str, db: Session):
+    email = DEMO_ROLE_TO_EMAIL.get(role)
+    if not email:
+        return None
+
+    demo = DEMO_USERS[email]
+    return login_user(
+        SimpleNamespace(email=email, password=demo["password"]),
+        db,
+    )

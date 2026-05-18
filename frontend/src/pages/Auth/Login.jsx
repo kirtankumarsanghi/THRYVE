@@ -21,7 +21,7 @@ const DEMO_USERS = [
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, token, role: currentRole, loading } = useAuth();
+  const { login, demoLogin, token, role: currentRole, loading } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState(null);
   const [apiError, setApiError] = useState("");
@@ -55,14 +55,7 @@ export default function Login() {
     setDemoLoading(demo.role);
     setApiError("");
 
-    const demoCredentials = {
-      employee: { email: "employee@thryve.com", password: "employee123" },
-      manager: { email: "manager@thryve.com", password: "manager123" },
-      admin: { email: "admin@thryve.com", password: "admin123" },
-    };
-
-    const creds = demoCredentials[demo.role];
-    const result = await login(creds.email, creds.password);
+    const result = await demoLogin(demo.role);
 
     if (result?.ok) {
       const userRole = result.user?.role || demo.role;

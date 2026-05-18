@@ -10,15 +10,20 @@ const getApiUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  
-  // 2. Auto-detect production environment
+
   const hostname = window.location.hostname;
-  if (hostname.includes('vercel.app') || hostname.includes('thryve')) {
-    return 'https://thryve-5pie.onrender.com';
+  const isLocalHost =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1";
+
+  // 2. In local development, talk to local API.
+  if (isLocalHost) {
+    return "http://127.0.0.1:8000";
   }
-  
-  // 3. Default to localhost for development
-  return 'http://127.0.0.1:8000';
+
+  // 3. In any hosted environment, default to production backend.
+  return "https://thryve-5pie.onrender.com";
 };
 
 export const API_BASE_URL = getApiUrl();
