@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getTeamAnalytics } from "../../api/analyticsApi";
 import { motion } from "framer-motion";
 import { Calendar, Video, Clock, MessageSquare, ChevronRight, User } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function OneOnOnes() {
   const [team, setTeam] = useState([]);
@@ -11,7 +12,11 @@ export default function OneOnOnes() {
     const load = async () => {
       try {
         const t = await getTeamAnalytics();
-        setTeam(t || []);
+        setTeam(Array.isArray(t) ? t : []);
+      } catch (error) {
+        console.error("Failed to load team members for 1-on-1s:", error);
+        setTeam([]);
+        toast.error("Could not load team check-in members.");
       } finally {
         setLoading(false);
       }

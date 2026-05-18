@@ -3,7 +3,7 @@ import { Download, FileText, Table, BarChart2, Users, CheckCircle2, Search, Bell
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios";
+import api from "../../api/axios";
 import LiveDataNotice from "../../components/common/LiveDataNotice";
 import { useManager } from "../../context/ManagerContext";
 import { useAuth } from "../../context/AuthContext";
@@ -59,12 +59,9 @@ export default function Reports() {
   const loadReportPreview = async () => {
     setLoadingPreview(true);
     try {
-      const token = localStorage.getItem("token");
-      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
-      const response = await axios.get(
-        `${baseURL}/api/reports/achievement`,
+      const response = await api.get(
+        "/reports/achievement",
         {
-          headers: { Authorization: `Bearer ${token}` },
           params: department ? { department } : {}
         }
       );
@@ -123,7 +120,6 @@ export default function Reports() {
         throw new Error("Not authenticated. Please login again.");
       }
 
-      const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000";
       let endpoint = "";
       let filename = "";
       const timestamp = new Date().toISOString().split('T')[0];
@@ -133,9 +129,9 @@ export default function Reports() {
         // Fetch fresh data if not already loaded
         let pdfData = reportData;
         if (!pdfData || selectedReport !== "achievement") {
-          const resp = await axios.get(
-            `${baseURL}/api/reports/achievement`,
-            { headers: { Authorization: `Bearer ${token}` }, params: department ? { department } : {} }
+          const resp = await api.get(
+            "/reports/achievement",
+            { params: department ? { department } : {} }
           );
           pdfData = resp.data;
         }
@@ -148,17 +144,17 @@ export default function Reports() {
       // Determine endpoint based on report type
       if (selectedReport === "achievement") {
         if (format === "csv") {
-          endpoint = `${baseURL}/api/reports/achievement/export/csv`;
+          endpoint = "/reports/achievement/export/csv";
           filename = `achievement_report_${timestamp}.csv`;
         } else {
-          endpoint = `${baseURL}/api/reports/achievement/export/xlsx`;
+          endpoint = "/reports/achievement/export/xlsx";
           filename = `achievement_report_${timestamp}.xlsx`;
         }
       } else if (selectedReport === "team") {
-        endpoint = `${baseURL}/api/analytics/team`;
+        endpoint = "/analytics/team";
         filename = `team_overview_${timestamp}.${format}`;
       } else if (selectedReport === "completion") {
-        endpoint = `${baseURL}/api/reports/completion-dashboard`;
+        endpoint = "/reports/completion-dashboard";
         filename = `completion_dashboard_${timestamp}.${format}`;
       }
 
@@ -171,8 +167,7 @@ export default function Reports() {
 
       // For achievement reports with CSV/XLSX, expect blob response
       if (selectedReport === "achievement") {
-        const response = await axios.get(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(endpoint, {
           params,
           responseType: "blob"
         });
@@ -200,8 +195,7 @@ export default function Reports() {
 
       } else {
         // For other reports, get JSON and convert
-        const response = await axios.get(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await api.get(endpoint, {
           params
         });
 
