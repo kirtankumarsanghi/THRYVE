@@ -1,6 +1,7 @@
 import { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import * as goalsApi from '../api/goalsApi';
 import toast from 'react-hot-toast';
+import { useAuth } from './AuthContext';
 
 export const calculateGoalProgress = (goal) => {
   if (typeof goal.achievement_percentage === 'number') {
@@ -74,11 +75,16 @@ export const GoalProvider = ({ children }) => {
   const [goals, dispatch] = useReducer(goalReducer, []);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { token } = useAuth();
 
-  // Fetch goals from backend on mount
+  // Fetch goals from backend only when authenticated
   useEffect(() => {
-    fetchGoals();
-  }, []);
+    if (token) {
+      fetchGoals();
+    } else {
+      setLoading(false);
+    }
+  }, [token]);
 
   const fetchGoals = async () => {
     try {

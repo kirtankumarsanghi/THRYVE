@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, Target, Users, Shield, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { healthAuth } from "../../api/authApi";
+import ThryveLogo from "../../components/branding/ThryveLogo";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -305,11 +306,8 @@ export default function Login() {
           className="w-full max-w-[420px] relative z-10"
         >
           {/* Mobile Only Logo */}
-          <div className="lg:hidden mb-10 text-center flex flex-col items-center">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 border border-white/20 mb-4 shadow-xl">
-              <Target size={24} className="text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight mb-2">THRYVE</h1>
+          <div className="lg:hidden mb-10 text-center flex justify-center">
+            <ThryveLogo size="md" />
           </div>
 
           <div className="mb-8">

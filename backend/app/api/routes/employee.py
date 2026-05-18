@@ -39,3 +39,11 @@ def get_employee_calendar(
     use_year = year or now.year
     use_month = month or now.month
     return employee_service.get_employee_calendar(db, current_user["user_id"], use_year, use_month)
+
+
+@router.get("/feedback")
+def get_employee_feedback(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
+):
+    return employee_service.get_employee_feedback(db, current_user["user_id"])

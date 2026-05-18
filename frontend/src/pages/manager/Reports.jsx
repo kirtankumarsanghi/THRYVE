@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Download, FileText, Table, BarChart2, Users, CheckCircle2, Search, Bell, HelpCircle, RefreshCw, ChevronRight, FileSpreadsheet, Calendar, Filter } from "lucide-react";
+import { Download, FileText, Table, BarChart2, Users, CheckCircle2, Search, Bell, HelpCircle, RefreshCw, ChevronRight, FileSpreadsheet, Calendar, Filter, FileDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import LiveDataNotice from "../../components/common/LiveDataNotice";
 import { useManager } from "../../context/ManagerContext";
+import { useAuth } from "../../context/AuthContext";
+import { generateManagerReportPDF } from "../../utils/pdfExport";
 
 const fade = (d = 0) => ({ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay: d } });
 
@@ -38,7 +40,8 @@ const REPORT_TYPES = [
 
 export default function Reports() {
   const { team, refreshData } = useManager();
-  const [format, setFormat] = useState("csv");
+  const { user } = useAuth();
+  const [format, setFormat] = useState("pdf");
   const [selectedReport, setSelectedReport] = useState("achievement");
   const [loading, setLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -124,6 +127,23 @@ export default function Reports() {
       let endpoint = "";
       let filename = "";
       const timestamp = new Date().toISOString().split('T')[0];
+
+      // ── PDF: generate client-side from already-loaded data ──
+      if (format === "pdf") {
+        // Fetch fresh data if not already loaded
+        let pdfData = reportData;
+        if (!pdfData || selectedReport !== "achievement") {
+          const resp = await axios.get(
+            `${baseURL}/api/reports/achievement`,
+            { headers: { Authorization: `Bearer ${token}` }, params: department ? { department } : {} }
+          );
+          pdfData = resp.data;
+        }
+        generateManagerReportPDF(pdfData, team, user?.full_name || "Manager");
+        toast.success("PDF report downloaded!", { id: loadingToast });
+        setLoading(false);
+        return;
+      }
 
       // Determine endpoint based on report type
       if (selectedReport === "achievement") {
@@ -272,56 +292,29 @@ export default function Reports() {
   const selectedReportType = REPORT_TYPES.find(r => r.id === selectedReport);
 
   return (
-    <div className="min-h-screen bg-[#040914]">
-      {/* Top Navigation Bar */}
-      <div className="border-b border-white/5 bg-[#0B132C]/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold text-white">Thryve.</h1>
-            <div className="flex items-center gap-2 text-sm text-slate-400">
-              <Link to="/manager/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6 text-white">
+
+        {/* Header */}
+        <motion.div {...fade(0)} className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+              <span>Manager</span>
               <ChevronRight size={14} />
               <span className="text-indigo-400">Reports & Export</span>
             </div>
+            <h2 className="text-3xl font-bold tracking-tight">Reports & Export</h2>
+            <p className="text-sm text-slate-400 mt-1">Generate and download team performance reports</p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">SYSTEM LIVE</span>
-            </div>
-            <button 
+          <div className="flex items-center gap-3">
+            <button
               onClick={handleRefresh}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
               disabled={isRefreshing}
+              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-semibold transition-colors border border-white/10"
             >
-              <RefreshCw size={20} className={`text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Bell size={20} className="text-slate-400" />
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <HelpCircle size={20} className="text-slate-400" />
+              <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+              Refresh
             </button>
           </div>
-        </div>
-      </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6">
-        {/* Header */}
-        <motion.div {...fade(0)} className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Reports & Export</h1>
-            <p className="text-sm text-gray-500">Generate and download team performance reports</p>
-          </div>
-          <Link 
-            to="/manager/dashboard"
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors border border-white/5"
-          >
-            Back to Dashboard
-          </Link>
         </motion.div>
 
         <LiveDataNotice source="Reports API" hint="Real-time report generation from team data" />
@@ -384,15 +377,16 @@ export default function Reports() {
                 <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">
                   Output Format
                 </label>
-                <div className="flex gap-3">
+                <div className="grid grid-cols-3 gap-3">
                   {[
+                    { val: "pdf", label: "PDF", desc: "Professional report", icon: FileDown },
                     { val: "csv", label: "CSV", desc: "Comma-separated", icon: Table },
                     { val: "xlsx", label: "Excel", desc: "Microsoft Excel", icon: FileSpreadsheet },
                   ].map(f => (
                     <button
                       key={f.val}
                       onClick={() => setFormat(f.val)}
-                      className={`flex-1 p-4 rounded-xl border transition-all text-left ${
+                      className={`p-4 rounded-xl border transition-all text-left ${
                         format === f.val
                           ? "bg-indigo-500/10 border-indigo-500/25 text-white"
                           : "bg-black/20 border-white/5 text-gray-400 hover:border-white/10"
@@ -590,7 +584,6 @@ export default function Reports() {
             <p className="text-lg font-bold text-white">Q3 FY26</p>
           </div>
         </motion.div>
-      </div>
     </div>
   );
 }

@@ -14,6 +14,7 @@ export default function Achievements() {
   const navigate = useNavigate();
   const [achievementData, setAchievementData] = useState(null);
   const [likesById, setLikesById] = useState({});
+  const [badgeFilter, setBadgeFilter] = useState('all'); // Add filter state
 
   useEffect(() => {
     let active = true;
@@ -45,7 +46,7 @@ export default function Achievements() {
   const impactScore = Math.min(10, Math.round((completionRate / 10) * 10) / 10);
   const rankPosition = achievementData?.rank?.position;
 
-  const badges = useMemo(() => {
+  const allBadges = useMemo(() => {
     const earnedMvp = completionRate >= 80;
     const earnedInnovation = overachievementRate >= 100;
     const earnedTenure = totalGoals >= 5;
@@ -62,6 +63,23 @@ export default function Achievements() {
       { id: "global", name: "Global Citizen", icon: Users, earned: earnedGlobal, color: "text-slate-500", bg: "bg-slate-800" },
     ];
   }, [completionRate, completedGoalsCount, overachievementRate, totalGoals]);
+
+  const badges = useMemo(() => {
+    if (badgeFilter === 'locked') {
+      return allBadges.filter(b => !b.earned);
+    }
+    if (badgeFilter === 'earned') {
+      return allBadges.filter(b => b.earned);
+    }
+    return allBadges;
+  }, [allBadges, badgeFilter]);
+
+  const badgeCounts = useMemo(() => {
+    const all = allBadges.length || 0;
+    const earned = allBadges.filter((b) => b.earned).length;
+    const locked = allBadges.filter((b) => !b.earned).length;
+    return { all, earned, locked };
+  }, [allBadges]);
 
   const milestoneColors = ["bg-emerald-400", "bg-purple-400", "bg-pink-400"];
 
@@ -139,8 +157,24 @@ export default function Achievements() {
                 <Award size={20} className="text-slate-400" /> Achievement Gallery
               </h2>
               <div className="flex bg-white/5 p-1 rounded-lg">
-                <button className="px-4 py-1 text-xs font-semibold text-white bg-white/10 rounded-md">All</button>
-                <button className="px-4 py-1 text-xs font-semibold text-slate-400 hover:text-white transition-colors">Locked</button>
+                <button 
+                  onClick={() => setBadgeFilter('all')}
+                  className={`px-4 py-1 text-xs font-semibold rounded-md transition-colors ${badgeFilter === 'all' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white'}`}
+                >
+                  All ({badgeCounts.all})
+                </button>
+                <button 
+                  onClick={() => setBadgeFilter('earned')}
+                  className={`px-4 py-1 text-xs font-semibold rounded-md transition-colors ${badgeFilter === 'earned' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Earned ({badgeCounts.earned})
+                </button>
+                <button 
+                  onClick={() => setBadgeFilter('locked')}
+                  className={`px-4 py-1 text-xs font-semibold rounded-md transition-colors ${badgeFilter === 'locked' ? 'text-white bg-white/10' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Locked ({badgeCounts.locked})
+                </button>
               </div>
             </div>
             

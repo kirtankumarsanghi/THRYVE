@@ -285,3 +285,60 @@ def get_employee_calendar(db: Session, user_id: int, year: int, month: int) -> D
         "month": month,
         "events": events,
     }
+
+def get_employee_feedback(db: Session, user_id: int) -> Dict[str, Any]:
+    goals = db.query(Goal).filter(Goal.employee_id == user_id).all()
+    if not goals:
+        return {"items": []}
+
+    goal_ids = [g.id for g in goals]
+    checkins = (
+        db.query(Checkin)
+        .filter(Checkin.goal_id.in_(goal_ids))
+        .order_by(Checkin.updated_at.desc())
+        .all()
+    )
+
+    user = db.query(User).filter(User.id == user_id).first()
+    user_name = user.full_name if user else "You"
+
+    items: List[Dict[str, Any]] = []
+    for checkin in checkins:
+        has_manager_comment = bool((checkin.manager_comment or "").strip())
+        has_employee_comment = bool((checkin.comment or "").strip())
+        if not has_manager_comment and not has_employee_comment:
+            continue
+
+        status_value = (checkin.status or "").lower()
+        progress_value = checkin.progress_percentage or 0
+        feedback_type = "praise" if progress_value >= 100 or status_value == "completed" else "constructive"
+
+        if has_manager_comment:
+            author, comment_time, message = _parse_manager_comment(checkin.manager_comment)
+            time_value = comment_time or (checkin.updated_at.isoformat() if checkin.updated_at else "")
+            items.append(
+                {
+                    "id": f"mgr-{checkin.id}",
+                    "type": feedback_type,
+                    "author": author,
+                    "time": time_value,
+                    "badge": "Manager Review",
+                    "message": message,
+                }
+            )
+
+        if has_employee_comment:
+            time_value = checkin.created_at.isoformat() if checkin.created_at else ""
+            items.append(
+                {
+                    "id": f"self-{checkin.id}",
+                    "type": feedback_type,
+                    "author": user_name,
+                    "time": time_value,
+                    "badge": "Check-in",
+                    "message": checkin.comment,
+                }
+            )
+
+    items.sort(key=lambda item: item.get("time") or "", reverse=True)
+    return {"items": items}

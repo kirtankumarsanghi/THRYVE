@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Bell, Settings, Search, Filter, Download, RefreshCw, Shield, Clock } from "lucide-react";
+import { ArrowLeft, Bell, Settings, Search, Filter, Download, RefreshCw, Shield, Clock, ChevronRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
@@ -80,83 +80,39 @@ export default function AuditLogs() {
   }, [logs]);
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E]">
-      {/* Top Bar */}
-      <div className="bg-[#0F1629] border-b border-white/5 px-8 py-4">
-        <div className="flex items-center justify-between max-w-[1800px] mx-auto">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-white">Admin Console</h1>
-            <span className="text-gray-500">—</span>
-            <span className="text-gray-400">Marcus Rivers</span>
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6 text-white">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <span>Admin</span>
+            <ChevronRight size={14} />
+            <span className="text-indigo-400">Governance & Security</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors">
-              • ADMIN MODE
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Bell size={20} className="text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Settings size={20} className="text-gray-400" />
-            </button>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight">Audit Logs</h2>
+          <p className="text-slate-400 mt-2 text-sm max-w-xl">
+            Live security and compliance activity stream for system monitoring.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-semibold transition-colors border border-white/10"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={exportLogs}
+            disabled={exporting}
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 border border-indigo-400/30"
+          >
+            <Download size={16} />
+            <span>{exporting ? "Exporting..." : "Export Logs"}</span>
+          </button>
         </div>
       </div>
-
-      {/* Breadcrumb */}
-      <div className="bg-[#0F1629] px-8 py-3 border-b border-white/5">
-        <div className="max-w-[1800px] mx-auto flex items-center gap-2 text-sm">
-          <Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">
-            🏠
-          </Link>
-          <span className="text-gray-600">›</span>
-          <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
-            Admin
-          </Link>
-          <span className="text-gray-600">›</span>
-          <span className="text-indigo-400">Audit Logs</span>
-        </div>
-      </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8">
-        {/* Back Button */}
-        <Link 
-          to="/admin/dashboard"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </Link>
-
-        {/* Header */}
-        <motion.div {...fade(0)} className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <Shield className="text-indigo-400" size={32} />
-                <h1 className="text-4xl font-bold text-white">Audit Logs</h1>
-              </div>
-              <p className="text-gray-400">Live security and compliance activity stream for system monitoring.</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleRefresh}
-                disabled={isRefreshing}
-                className="p-3 hover:bg-white/5 rounded-lg transition-colors"
-              >
-                <RefreshCw size={20} className={`text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-              </button>
-              <button
-                onClick={exportLogs}
-                disabled={exporting}
-                className="flex items-center gap-2 px-5 py-3 bg-indigo-500 hover:bg-indigo-600 disabled:opacity-50 text-white rounded-xl font-bold transition-colors shadow-lg shadow-indigo-500/20"
-              >
-                <Download size={18} />
-                {exporting ? "Exporting..." : "Export Logs"}
-              </button>
-            </div>
-          </div>
-        </motion.div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
@@ -280,7 +236,6 @@ export default function AuditLogs() {
             </div>
           )}
         </motion.div>
-      </div>
 
       <style jsx>{`
         .custom-scrollbar::-webkit-scrollbar {
@@ -301,3 +256,5 @@ export default function AuditLogs() {
     </div>
   );
 }
+
+

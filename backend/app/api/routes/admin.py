@@ -16,8 +16,9 @@ from app.models.goal import Goal
 from app.models.user import User
 from app.models.quarterly_window import QuarterlyWindow
 from app.models.department import Department
+from app.models.escalation import EscalationLog
 from app.schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentResponse, DepartmentWithStats
-from app.services import audit_service, analytics_service
+from app.services import audit_service, analytics_service, escalation_service
 from app.utils import csv_export
 from app.utils.quarterly_windows import WINDOW_CONFIG, validate_no_window_overlap
 
@@ -221,6 +222,10 @@ class QuarterlyWindowsUpdateBody(BaseModel):
     windows: list[QuarterlyWindowItem]
 
 
+class ResolveEscalationBody(BaseModel):
+    status: str = "resolved"
+
+
 @router.get("/users")
 def list_users(
     db: Session = Depends(get_db),
@@ -238,6 +243,68 @@ def list_users(
         }
         for u in users
     ]
+
+
+@router.post("/escalations/run")
+def run_escalation_rules(
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    admin = db.query(User).filter(User.id == current_user["user_id"]).first()
+    return escalation_service.run_escalation_scan(
+        db,
+        actor_user_id=current_user["user_id"],
+        actor_user_email=admin.email if admin else None,
+    )
+
+
+@router.get("/escalations")
+def list_escalations(
+    status: str = Query("open", description="Filter by status"),
+    limit: int = Query(100, ge=1, le=500),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    query = db.query(EscalationLog)
+    if status and status != "all":
+        query = query.filter(EscalationLog.status == status)
+    rows = query.order_by(EscalationLog.created_at.desc()).limit(limit).all()
+    return [
+        {
+            "id": row.id,
+            "rule_type": row.rule_type,
+            "entity_type": row.entity_type,
+            "entity_id": row.entity_id,
+            "level": row.level,
+            "status": row.status,
+            "recipient_role": row.recipient_role,
+            "recipient_emails": row.recipient_emails.split(",") if row.recipient_emails else [],
+            "message": row.message,
+            "created_at": row.created_at.isoformat() if row.created_at else None,
+            "resolved_at": row.resolved_at.isoformat() if row.resolved_at else None,
+        }
+        for row in rows
+    ]
+
+
+@router.put("/escalations/{escalation_id}")
+def update_escalation_status(
+    escalation_id: int,
+    body: ResolveEscalationBody,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    row = db.query(EscalationLog).filter(EscalationLog.id == escalation_id).first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Escalation log not found")
+    row.status = body.status
+    if body.status == "resolved":
+        from datetime import datetime
+
+        row.resolved_at = datetime.utcnow()
+    db.commit()
+    db.refresh(row)
+    return {"id": row.id, "status": row.status}
 
 
 @router.put("/users/{user_id}/role")
@@ -636,9 +703,14 @@ def get_departments(
         employee_count = db.query(User).filter(User.department == dept.name).count()
         
         # Get goal statistics
-        dept_goals = db.query(Goal).join(User).filter(User.department == dept.name).all()
+        dept_goals = (
+            db.query(Goal)
+            .join(User, Goal.employee_id == User.id)
+            .filter(User.department == dept.name)
+            .all()
+        )
         total_goals = len(dept_goals)
-        completed_goals = sum(1 for g in dept_goals if g.status == "completed")
+        completed_goals = sum(1 for g in dept_goals if str(g.status).lower() == "completed")
         
         # Calculate average performance
         if dept_goals:

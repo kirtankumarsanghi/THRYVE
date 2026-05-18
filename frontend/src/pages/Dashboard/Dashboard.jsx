@@ -191,70 +191,103 @@ export default function Dashboard() {
     ];
   }, [goals]);
 
-  return (
-    <div className="min-h-screen bg-[#040914] text-white">
-      {/* Top Navigation Bar */}
-      <div className="border-b border-white/5 bg-[#0B132C]/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold">Thryve.</h1>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input 
-                type="text" 
-                placeholder="Find reports, projects, or metrics..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#0B132C] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 w-[400px] transition-all"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">SYSTEM LIVE</span>
-            </div>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors relative">
-              <Bell size={20} className="text-slate-400" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <HelpCircle size={20} className="text-slate-400" />
-            </button>
-          </div>
-        </div>
-      </div>
+  const handleExportReport = () => {
+    const toCsvValue = (value) => {
+      if (value === null || value === undefined) return "";
+      const text = String(value);
+      if (/[",\n]/.test(text)) {
+        return `"${text.replace(/"/g, '""')}"`;
+      }
+      return text;
+    };
 
-      <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6">
-        
-        {/* Breadcrumb & Actions */}
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
-              <span>Engineering</span>
-              <ChevronRight size={14} />
-              <span className="text-indigo-400">Core Platform Team</span>
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">Executive Dashboard</h2>
+    const rows = [];
+    rows.push(["Report", "Executive Dashboard"]);
+    rows.push(["Generated At", new Date().toISOString()]);
+    rows.push(["Quarter", selectedQuarter]);
+    rows.push([]);
+    rows.push(["KPI", "Value"]);
+    rows.push(["Avg Output Score", avgOutputScore]);
+    rows.push(["Utilization Rate", `${utilizationRate}%`]);
+    rows.push(["Open Requisitions", openRequisitions]);
+    rows.push(["Pending Decisions", pendingDecisions]);
+    rows.push([]);
+    rows.push(["Goals"]);
+    rows.push(["ID", "Title", "Status", "Progress", "Quarter", "Strategic Area", "Target", "Achieved"]);
+
+    if (goals.length === 0) {
+      rows.push(["", "No goals available"]);
+    } else {
+      goals.forEach((goal) => {
+        rows.push([
+          goal.id,
+          goal.title,
+          goal.status,
+          `${calculateGoalProgress(goal)}%`,
+          goal.quarter || "",
+          goal.strategic_area || "",
+          goal.target_value ?? "",
+          goal.achieved_value ?? "",
+        ]);
+      });
+    }
+
+    const csvContent = rows.map((row) => row.map(toCsvValue).join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `dashboard_export_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6 text-white">
+      {/* Dashboard Header */}
+
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <span>Engineering</span>
+            <ChevronRight size={14} />
+            <span className="text-indigo-400">Core Platform Team</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-semibold transition-colors">
+          <h2 className="text-3xl font-bold tracking-tight">Executive Dashboard</h2>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="relative hidden sm:block">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input 
+              type="text" 
+              placeholder="Find metrics..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-[#0B132C] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 w-[200px] transition-all"
+            />
+          </div>
+          
+          <div className="flex items-center bg-[#0B132C] backdrop-blur-xl rounded-xl border border-white/10 p-1">
+            <button className="px-4 py-2 bg-white/10 text-white rounded-lg text-sm font-semibold transition-colors">
               {selectedQuarter}
             </button>
-            <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm font-semibold transition-colors">
+            <button className="px-4 py-2 hover:bg-white/5 text-gray-500 hover:text-white rounded-lg text-sm font-semibold transition-colors">
               Historical
             </button>
-            <button 
-              onClick={() => navigate("/employee/reports")}
-              className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
-            >
-              <Download size={16} /> Export PDF
-            </button>
           </div>
+
+          <button 
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 border border-indigo-400/30"
+            onClick={handleExportReport}
+            disabled={loading}
+          >
+            <Download size={16} /> <span>Export Report</span>
+          </button>
         </div>
+      </div>
 
         <LiveDataNotice source="Analytics + Goals APIs" hint="Real-time data from your goals and check-ins" />
 
@@ -495,6 +528,5 @@ export default function Dashboard() {
         </div>
 
       </div>
-    </div>
   );
 }

@@ -1,18 +1,23 @@
 import React, { useMemo, useState } from 'react';
-import { Plus, Search, Filter, Target } from 'lucide-react';
+import { Plus, Search, Filter, Target, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import PageContainer from '../../components/common/PageContainer';
 import SectionHeader from '../../components/common/SectionHeader';
 import GoalCard from '../../components/goals/GoalCard';
 import LiveDataNotice from '../../components/common/LiveDataNotice';
 import { useGoals } from '../../context/GoalContext';
+import { useAuth } from '../../context/AuthContext';
+import { generateEmployeeGoalsPDF } from '../../utils/pdfExport';
 
 export default function Goals() {
   const navigate = useNavigate();
   const { goals } = useGoals();
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
+  const [exporting, setExporting] = useState(false);
 
   const filteredGoals = useMemo(
     () =>
@@ -32,13 +37,33 @@ export default function Goals() {
           title="Strategic Goals"
           subtitle="Manage, track, and align enterprise objectives across all departments."
         />
-        <button 
-          onClick={() => navigate('create')}
-          className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all hover:-translate-y-0.5 shadow-[0_0_20px_rgba(139,127,255,0.25)] whitespace-nowrap"
-        >
-          <Plus className="w-5 h-5" />
-          New Goal
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <button
+            onClick={() => {
+              setExporting(true);
+              try {
+                generateEmployeeGoalsPDF(goals, user?.full_name || 'Employee');
+                toast.success('PDF report downloaded!');
+              } catch (err) {
+                toast.error('Failed to export PDF: ' + err.message);
+              } finally {
+                setExporting(false);
+              }
+            }}
+            disabled={exporting || goals.length === 0}
+            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white px-4 py-2.5 rounded-lg font-semibold text-sm transition-all border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            <Download className="w-4 h-4" />
+            {exporting ? 'Exporting...' : 'Export PDF'}
+          </button>
+          <button 
+            onClick={() => navigate('create')}
+            className="flex items-center gap-2 bg-primary hover:bg-primary/90 text-white px-5 py-2.5 rounded-lg font-semibold transition-all hover:-translate-y-0.5 shadow-[0_0_20px_rgba(139,127,255,0.25)] whitespace-nowrap"
+          >
+            <Plus className="w-5 h-5" />
+            New Goal
+          </button>
+        </div>
       </div>
       <LiveDataNotice source="Goals API" hint="Create or update a goal to see immediate cross-role reflection." />
 

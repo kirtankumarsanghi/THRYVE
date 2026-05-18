@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
+import os
 
 from app.core.database import Base, engine, SessionLocal
 from app.api.api_router import router
@@ -13,6 +14,7 @@ from app.models.checkin import Checkin  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.quarterly_window import QuarterlyWindow  # noqa: F401
 from app.models.department import Department  # noqa: F401
+from app.models.escalation import EscalationLog  # noqa: F401
 from app.utils.quarterly_windows import WINDOW_CONFIG
 
 # Create tables
@@ -20,14 +22,30 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="THRYVE API", version="1.0.0")
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+
+def get_cors_origins():
+    """Build explicit CORS origins from env for production safety."""
+    default_origins = [
         "http://localhost:5173",
         "http://localhost:5174",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
-    ],
+    ]
+
+    env_origins = os.getenv("CORS_ORIGINS", "").strip()
+    if env_origins:
+        parsed = [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+        return default_origins + parsed
+
+    frontend_url = os.getenv("FRONTEND_URL", "").strip()
+    if frontend_url:
+        return default_origins + [frontend_url]
+
+    return default_origins
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=get_cors_origins(),
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],

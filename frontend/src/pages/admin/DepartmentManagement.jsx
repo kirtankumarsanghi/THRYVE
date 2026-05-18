@@ -203,12 +203,12 @@ export default function DepartmentManagement() {
         <div className="flex items-center justify-between max-w-[1800px] mx-auto">
           <div className="flex items-center gap-4">
             <h1 className="text-lg font-bold text-white">Admin Console</h1>
-            <span className="text-gray-500">—</span>
+            <span className="text-gray-500">-</span>
             <span className="text-gray-400">Marcus Rivers</span>
           </div>
           <div className="flex items-center gap-4">
             <button className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors">
-              • ADMIN MODE
+              ADMIN MODE
             </button>
             <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
               <Bell size={20} className="text-gray-400" />
@@ -224,13 +224,13 @@ export default function DepartmentManagement() {
       <div className="bg-[#0F1629] px-8 py-3 border-b border-white/5">
         <div className="max-w-[1800px] mx-auto flex items-center gap-2 text-sm">
           <Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">
-            🏠
+            Home
           </Link>
-          <span className="text-gray-600">›</span>
+          <span className="text-gray-600">{">"}</span>
           <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
             Admin
           </Link>
-          <span className="text-gray-600">›</span>
+          <span className="text-gray-600">{">"}</span>
           <span className="text-indigo-400">Departments</span>
         </div>
       </div>
@@ -658,3 +658,5 @@ export default function DepartmentManagement() {
     </div>
   );
 }
+
+

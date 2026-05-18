@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import ThryveLogo from "../components/branding/ThryveLogo";
 import {
   Home, Users, Calendar, Shield, Download,
   Settings, LogOut, Menu, X, ChevronRight, Building2
@@ -26,15 +27,15 @@ export default function AdminLayout() {
     navigate("/login");
   };
 
-  const userName = user?.name || "Admin";
+  const userName = user?.full_name || user?.name || "Admin";
   const initials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
-    <div className="flex h-screen bg-[#060D1F] overflow-hidden font-sans">
+    <div className="flex h-screen bg-[#030712] overflow-hidden font-sans text-gray-300">
       {/* Mobile Overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm z-40 md:hidden transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -43,33 +44,29 @@ export default function AdminLayout() {
       <aside
         className={`
           fixed md:static inset-y-0 left-0 z-50 w-72
-          bg-[#0B1437]/90 backdrop-blur-2xl border-r border-white/5
+          bg-[#0B1221]/95 backdrop-blur-2xl border-r border-white/5
           flex flex-col transition-transform duration-300 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+          shadow-[4px_0_24px_rgba(0,0,0,0.5)] md:shadow-none
         `}
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-6 py-6 border-b border-white/5">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center shadow-[0_0_15px_rgba(239,68,68,0.4)]">
-              <Shield size={18} className="text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-wide text-white">THRYVE</span>
-          </div>
-          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white">
+          <ThryveLogo size="sm" />
+          <button onClick={() => setSidebarOpen(false)} className="md:hidden text-gray-400 hover:text-white transition-colors">
             <X size={20} />
           </button>
         </div>
 
         {/* User Identity Card */}
-        <div className="mx-4 mt-5 p-4 rounded-2xl bg-red-500/10 border border-red-500/20">
+        <div className="mx-4 mt-6 p-4 rounded-2xl bg-gradient-to-br from-red-500/10 to-orange-500/10 border border-red-500/20 shadow-lg shadow-red-900/20">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-500/30 border-2 border-red-500/40 flex items-center justify-center text-sm font-bold text-red-300">
+            <div className="w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-sm font-bold text-red-300 shadow-inner">
               {initials}
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">{userName}</p>
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/30 mt-1">
+              <p className="text-sm font-bold text-white tracking-wide">{userName}</p>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/20 text-red-300 border border-red-500/30 mt-1">
                 Administrator
               </span>
             </div>
@@ -77,7 +74,8 @@ export default function AdminLayout() {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto custom-scrollbar">
+          <p className="px-4 text-[11px] font-bold text-gray-500 uppercase tracking-widest mb-3">System Menu</p>
           {NAV_ITEMS.map(({ label, path, icon: Icon }) => (
             <NavLink
               key={path}
@@ -85,18 +83,19 @@ export default function AdminLayout() {
               end={path.endsWith("dashboard")}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 group relative overflow-hidden ${
                   isActive
-                    ? "bg-red-500/15 text-red-300 border border-red-500/25 shadow-[inset_0_0_10px_rgba(239,68,68,0.05)]"
-                    : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    ? "bg-red-500/15 text-red-300 border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.1)]"
+                    : "text-gray-400 hover:bg-white/5 hover:text-white border border-transparent"
                 }`
               }
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={18} className={isActive ? "text-red-400" : "text-gray-500 group-hover:text-gray-300"} />
-                  <span className="flex-1">{label}</span>
-                  {isActive && <ChevronRight size={14} className="text-red-400 opacity-70" />}
+                  {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-red-400 rounded-r-md shadow-[0_0_10px_rgba(239,68,68,1)]" />}
+                  <Icon size={18} className={`relative z-10 transition-colors ${isActive ? "text-red-400" : "text-gray-500 group-hover:text-gray-300"}`} />
+                  <span className="flex-1 relative z-10">{label}</span>
+                  {isActive && <ChevronRight size={14} className="text-red-400 opacity-70 relative z-10" />}
                 </>
               )}
             </NavLink>
@@ -104,16 +103,19 @@ export default function AdminLayout() {
         </nav>
 
         {/* Divider + System Info */}
-        <div className="px-4 py-3 mx-4 mb-2 rounded-xl bg-white/3 border border-white/5 text-center">
-          <p className="text-[10px] text-gray-500 uppercase tracking-widest font-semibold">System Access</p>
-          <p className="text-[11px] text-red-400/80 font-medium mt-0.5">Full Permissions</p>
+        <div className="px-4 py-3 mx-4 mb-2 rounded-xl bg-white/5 border border-white/10 text-center shadow-inner">
+          <p className="text-[10px] text-gray-400 uppercase tracking-widest font-bold">System Access</p>
+          <div className="flex items-center justify-center gap-1.5 mt-1">
+            <Shield size={12} className="text-red-400" />
+            <p className="text-[11px] text-red-400 font-bold tracking-wide">Full Permissions</p>
+          </div>
         </div>
 
         {/* Logout */}
-        <div className="px-4 pb-6">
+        <div className="p-4 border-t border-white/5">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-transparent hover:border-red-500/20 transition-all duration-200"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/10 hover:text-red-300 border border-transparent hover:border-red-500/20 transition-all duration-300"
           >
             <LogOut size={18} />
             <span>Sign Out</span>
@@ -122,30 +124,33 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden relative">
         {/* Topbar */}
-        <header className="h-16 bg-[#0B1437]/60 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0">
+        <header className="h-16 bg-[#030712]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 flex-shrink-0 z-30 sticky top-0">
           <button
-            className="md:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5"
+            className="md:hidden text-gray-400 hover:text-white p-2 rounded-lg hover:bg-white/5 transition-colors"
             onClick={() => setSidebarOpen(true)}
           >
             <Menu size={20} />
           </button>
 
           <div className="hidden md:flex items-center gap-3">
-            <Shield size={16} className="text-red-400" />
+            <div className="relative flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </div>
             <span className="text-gray-400 text-sm">
-              Admin Console — <span className="text-white font-medium">{userName}</span>
+              Admin Console - <span className="text-white font-semibold">{userName}</span>
             </span>
           </div>
 
           <div className="flex items-center gap-4 ml-auto">
-            <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-red-500/15 text-red-300 border border-red-500/25">
-              Admin Mode
+            <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-red-500/10 text-red-400 border border-red-500/20 shadow-inner">
+              Admin Portal
             </span>
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors px-3 py-2 rounded-lg hover:bg-red-500/10"
+              className="flex items-center gap-2 text-sm text-gray-400 hover:text-red-400 transition-colors px-3 py-2 rounded-lg hover:bg-red-500/10 border border-transparent hover:border-red-500/20"
             >
               <LogOut size={16} />
               <span className="hidden sm:inline">Logout</span>
@@ -154,11 +159,12 @@ export default function AdminLayout() {
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#060D1F]">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden bg-[#030712] relative">
           <Outlet />
         </main>
       </div>
     </div>
   );
 }
+
 

@@ -68,6 +68,28 @@ Built for **hackathons** and **production** use.
 
 ---
 
+## 🚀 Deployment
+
+### Quick Deploy (15 minutes)
+Deploy your app for **FREE** using Render + Vercel:
+
+1. **Read**: [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) ⭐ Start here!
+2. **Follow**: Step-by-step instructions
+3. **Result**: Live app in 15 minutes
+
+### Comprehensive Guide
+For detailed deployment options and troubleshooting:
+- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete guide with 3 options
+- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step checklist
+- **[DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md)** - Overview and comparison
+
+### Deployment Options
+1. **Render + Vercel** (Recommended, Free)
+2. **Railway + Vercel** ($5/month, Faster)
+3. **Heroku + Vercel** (Traditional, $7+/month)
+
+---
+
 ## 🚀 Quick Start
 
 ### Prerequisites

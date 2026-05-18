@@ -22,9 +22,6 @@ def create_checkin(goal_id: int, data: CheckinCreate, user_id: int, db: Session,
     if goal.employee_id != user_id:
         raise HTTPException(status_code=403, detail="You do not own this goal")
 
-    if goal.is_locked:
-        raise HTTPException(status_code=400, detail="Goal is locked and cannot add check-ins")
-
     window_name = CHECKIN_WINDOW_BY_QUARTER.get(data.quarter)
     if window_name:
         try:

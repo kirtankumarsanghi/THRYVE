@@ -67,75 +67,51 @@ export default function ManagerDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#040914]">
-      {/* Top Navigation Bar - Consistent with Employee Dashboard */}
-      <div className="border-b border-white/5 bg-[#0B132C]/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-8">
-            <h1 className="text-xl font-bold text-white">Thryve.</h1>
-            <div className="relative">
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6">
+      {/* Dashboard Header */}
+
+        {/* Breadcrumb & Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+        <motion.div {...fade(0)}>
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <span>Management</span>
+            <ChevronRight size={14} />
+            <span className="text-purple-400">{user?.department || "Engineering"}</span>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">
+            Welcome back, {user?.full_name?.split(" ")[0] || "Manager"}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">Here's your team overview for this quarter.</p>
+        </motion.div>
+        
+        <motion.div {...fade(0.1)} className="flex flex-col items-end gap-3">
+          <div className="flex items-center gap-4">
+            <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input 
                 type="text" 
-                placeholder="Search team members, goals, or reports..." 
+                placeholder="Search team..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#0B132C] border border-white/10 rounded-lg pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 w-[400px] transition-all"
+                className="bg-[#0B132C] border border-white/10 rounded-xl pl-10 pr-4 py-2 text-sm text-white focus:outline-none focus:border-purple-500 w-[250px] transition-all"
               />
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">SYSTEM LIVE</span>
-            </div>
+            
             <button 
               onClick={handleRefresh}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+              className="p-2 hover:bg-white/5 border border-white/5 hover:border-white/20 rounded-xl transition-all"
               disabled={isRefreshing}
+              title="Refresh Data"
             >
-              <RefreshCw size={20} className={`text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw size={18} className={`text-gray-400 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
             </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors relative">
-              <Bell size={20} className="text-slate-400" />
-              {pendingApprovals.length > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-              )}
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <HelpCircle size={20} className="text-slate-400" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6">
-        {/* Breadcrumb & Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-          <motion.div {...fade(0)}>
-            <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
-              <span>Management</span>
-              <ChevronRight size={14} />
-              <span className="text-indigo-400">{user?.department || "Engineering"}</span>
-            </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">
-              Welcome back, {user?.full_name?.split(" ")[0] || "Manager"}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">Here's your team overview for this quarter.</p>
-          </motion.div>
-          <motion.div {...fade(0.1)} className="flex items-center gap-3">
-            <div className="flex items-center bg-[#0B132C] backdrop-blur-xl rounded-xl border border-white/10 p-1">
-              <button className="px-4 py-2 text-sm font-bold text-white bg-white/10 rounded-lg">Q3 FY26</button>
-              <button className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-white transition-colors">Historical</button>
-            </div>
-            <button className="flex items-center gap-2 px-5 py-2.5 bg-indigo-500 hover:bg-indigo-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-indigo-500/20 border border-indigo-400/30">
+            
+            <button className="flex items-center gap-2 px-5 py-2 bg-purple-500 hover:bg-purple-600 text-white text-sm font-bold rounded-xl transition-all shadow-lg shadow-purple-500/20 border border-purple-400/30">
               <Download size={16} /> Export PDF
             </button>
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
+      </div>
 
         <LiveDataNotice source="Manager + Analytics APIs" hint="Real-time data from team goals, approvals, and check-ins" />
 
@@ -372,6 +348,5 @@ export default function ManagerDashboard() {
           )}
         </motion.div>
       </div>
-    </div>
   );
 }

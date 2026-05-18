@@ -57,73 +57,31 @@ export default function UserManagement() {
   }, [users]);
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E]">
-      {/* Top Bar */}
-      <div className="bg-[#0F1629] border-b border-white/5 px-8 py-4">
-        <div className="flex items-center justify-between max-w-[1800px] mx-auto">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-white">Admin Console</h1>
-            <span className="text-gray-500">—</span>
-            <span className="text-gray-400">Marcus Rivers</span>
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6 text-white">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <span>Admin</span>
+            <span className="text-gray-600">&gt;</span>
+            <span className="text-indigo-400">User Management</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors">
-              • ADMIN MODE
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Bell size={20} className="text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Settings size={20} className="text-gray-400" />
-            </button>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+          <p className="text-slate-400 mt-2 text-sm max-w-xl">
+            Manage users, roles, and access control across the organization.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-semibold transition-colors border border-white/10"
+          >
+            <RefreshCw size={16} className={isRefreshing ? 'animate-spin' : ''} />
+            <span>Refresh</span>
+          </button>
         </div>
       </div>
-
-      {/* Breadcrumb */}
-      <div className="bg-[#0F1629] px-8 py-3 border-b border-white/5">
-        <div className="max-w-[1800px] mx-auto flex items-center gap-2 text-sm">
-          <Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">
-            🏠
-          </Link>
-          <span className="text-gray-600">›</span>
-          <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
-            Admin
-          </Link>
-          <span className="text-gray-600">›</span>
-          <span className="text-indigo-400">User Management</span>
-        </div>
-      </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8">
-        {/* Back Button */}
-        <Link 
-          to="/admin/dashboard"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </Link>
-
-        {/* Header */}
-        <motion.div {...fade(0)} className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <UserCog className="text-indigo-400" size={32} />
-                <h1 className="text-4xl font-bold text-white">User Management</h1>
-              </div>
-              <p className="text-gray-400">Manage users, roles, and access control across the organization.</p>
-            </div>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="p-3 hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <RefreshCw size={20} className={`text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-          </div>
-        </motion.div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-5 mb-8">
@@ -277,20 +235,21 @@ export default function UserManagement() {
         <motion.div {...fade(0.35)} className="mt-6 bg-blue-500/10 border border-blue-500/20 rounded-xl p-6">
           <div className="flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <span className="text-blue-400 text-lg">ℹ️</span>
+              <span className="text-blue-400 text-lg">i</span>
             </div>
             <div>
               <h3 className="text-white font-bold mb-2">Role Management Guidelines</h3>
               <ul className="text-sm text-gray-400 space-y-1">
-                <li>• <strong className="text-red-400">Admin:</strong> Full system access, can manage all users and settings</li>
-                <li>• <strong className="text-purple-400">Manager:</strong> Can view and approve team goals, manage direct reports</li>
-                <li>• <strong className="text-blue-400">Employee:</strong> Can create and manage their own goals</li>
-                <li>• Role changes take effect immediately and are logged in the audit trail</li>
+                <li>* <strong className="text-red-400">Admin:</strong> Full system access, can manage all users and settings</li>
+                <li>* <strong className="text-purple-400">Manager:</strong> Can view and approve team goals, manage direct reports</li>
+                <li>* <strong className="text-blue-400">Employee:</strong> Can create and manage their own goals</li>
+                <li>* Role changes take effect immediately and are logged in the audit trail</li>
               </ul>
             </div>
           </div>
         </motion.div>
       </div>
-    </div>
   );
 }
+
+

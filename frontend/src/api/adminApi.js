@@ -218,3 +218,18 @@ export const deleteDepartment = async (departmentId, force = false) => {
   });
   return response.data;
 };
+
+export const runEscalationScan = async () => {
+  const response = await axios.post("/admin/escalations/run");
+  return response.data;
+};
+
+export const getEscalations = async (status = "open", limit = 100) => {
+  const response = await axios.get("/admin/escalations", { params: { status, limit } });
+  return response.data;
+};
+
+export const updateEscalationStatus = async (escalationId, status = "resolved") => {
+  const response = await axios.put(`/admin/escalations/${escalationId}`, { status });
+  return response.data;
+};

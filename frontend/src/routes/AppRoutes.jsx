@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import EmployeeLayout from "../layouts/EmployeeLayout";
 import ManagerLayout from "../layouts/ManagerLayout";
 import AdminLayout from "../layouts/AdminLayout";
+import RoleRoute from "./RoleRoute";
 
 // Public Pages
 import Landing from "../pages/Landing";
@@ -45,6 +46,7 @@ import AdminCycles from "../pages/admin/CycleManagement";
 import AdminAudit from "../pages/admin/AuditLogs";
 import AdminReports from "../pages/admin/OrganizationAnalytics";
 import AdminGovernance from "../pages/admin/GovernanceCenter";
+import AdminDepartments from "../pages/admin/DepartmentManagement";
 
 export default function AppRoutes() {
   // Get user role from localStorage (you can also use context/redux)
@@ -67,47 +69,55 @@ export default function AppRoutes() {
         } />
 
         {/* Employee Routes */}
-        <Route element={<EmployeeLayout />}>
-          <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
-          <Route path="/employee/goals" element={<EmployeeGoals />} />
-          <Route path="/employee/goals/create" element={<EmployeeCreateGoal />} />
-          <Route path="/employee/goals/edit/:id" element={<EmployeeCreateGoal />} />
-          <Route path="/employee/goals/:id" element={<EmployeeGoalDetails />} />
-          <Route path="/employee/checkins" element={<EmployeeQuarterlyReview />} />
-          <Route path="/employee/progress" element={<EmployeeProgress />} />
-          <Route path="/employee/analytics" element={<EmployeeAnalytics />} />
-          <Route path="/employee/development" element={<EmployeeDevelopment />} />
-          <Route path="/employee/achievements" element={<EmployeeAchievements />} />
-          <Route path="/employee/feedback" element={<EmployeeFeedbackHistory />} />
-          <Route path="/employee/calendar" element={<EmployeeCalendar />} />
-          <Route path="/employee/notifications" element={<EmployeeNotifications />} />
+        <Route element={<RoleRoute allowedRoles={["employee"]} />}>
+          <Route element={<EmployeeLayout />}>
+            <Route path="/employee/dashboard" element={<EmployeeDashboard />} />
+            <Route path="/employee/goals" element={<EmployeeGoals />} />
+            <Route path="/employee/goals/create" element={<EmployeeCreateGoal />} />
+            <Route path="/employee/goals/edit/:id" element={<EmployeeCreateGoal />} />
+            <Route path="/employee/goals/:id" element={<EmployeeGoalDetails />} />
+            <Route path="/employee/checkins" element={<EmployeeQuarterlyReview />} />
+            <Route path="/employee/progress" element={<EmployeeProgress />} />
+            <Route path="/employee/analytics" element={<EmployeeAnalytics />} />
+            <Route path="/employee/development" element={<EmployeeDevelopment />} />
+            <Route path="/employee/achievements" element={<EmployeeAchievements />} />
+            <Route path="/employee/feedback" element={<EmployeeFeedbackHistory />} />
+            <Route path="/employee/calendar" element={<EmployeeCalendar />} />
+            <Route path="/employee/notifications" element={<EmployeeNotifications />} />
+          </Route>
         </Route>
 
         {/* Manager Routes */}
-        <Route element={<ManagerLayout />}>
-          <Route path="/manager/dashboard" element={<ManagerDashboard />} />
-          <Route path="/manager/team" element={<ManagerTeam />} />
-          <Route path="/manager/approvals" element={<ManagerApprovals />} />
-          <Route path="/manager/team-goals" element={<ManagerTeamGoals />} />
-          <Route path="/manager/one-on-ones" element={<ManagerOneOnOnes />} />
-          <Route path="/manager/insights" element={<ManagerInsights />} />
-          <Route path="/manager/feedback" element={<ManagerFeedback />} />
-          <Route path="/manager/calendar" element={<ManagerCalendar />} />
-          <Route path="/manager/checkins" element={<EmployeeQuarterlyReview />} />
-          <Route path="/manager/analytics" element={<ManagerAnalytics />} />
-          <Route path="/manager/reports" element={<ManagerReports />} />
-          <Route path="/manager/notifications" element={<EmployeeNotifications />} />
-          <Route path="/manager/review/:id" element={<EmployeeReview />} />
+        <Route element={<RoleRoute allowedRoles={["manager", "admin"]} />}>
+          <Route element={<ManagerLayout />}>
+            <Route path="/manager/dashboard" element={<ManagerDashboard />} />
+            <Route path="/manager/team" element={<ManagerTeam />} />
+            <Route path="/manager/approvals" element={<ManagerApprovals />} />
+            <Route path="/manager/team-goals" element={<ManagerTeamGoals />} />
+            <Route path="/manager/one-on-ones" element={<ManagerOneOnOnes />} />
+            <Route path="/manager/insights" element={<ManagerInsights />} />
+            <Route path="/manager/feedback" element={<ManagerFeedback />} />
+            <Route path="/manager/calendar" element={<ManagerCalendar />} />
+            <Route path="/manager/checkins" element={<EmployeeQuarterlyReview />} />
+            <Route path="/manager/analytics" element={<ManagerAnalytics />} />
+            <Route path="/manager/reports" element={<ManagerReports />} />
+            <Route path="/manager/notifications" element={<EmployeeNotifications />} />
+            <Route path="/manager/review/:id" element={<EmployeeReview />} />
+          </Route>
         </Route>
 
         {/* Admin Routes */}
-        <Route element={<AdminLayout />}>
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
-          <Route path="/admin/users" element={<AdminUsers />} />
-          <Route path="/admin/cycles" element={<AdminCycles />} />
-          <Route path="/admin/audit" element={<AdminAudit />} />
-          <Route path="/admin/reports" element={<AdminReports />} />
-          <Route path="/admin/governance" element={<AdminGovernance />} />
+        <Route element={<RoleRoute allowedRoles={["admin"]} />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsers />} />
+            <Route path="/admin/departments" element={<AdminDepartments />} />
+            <Route path="/admin/cycles" element={<AdminCycles />} />
+            <Route path="/admin/audit" element={<AdminAudit />} />
+            <Route path="/admin/analytics" element={<AdminReports />} />
+            <Route path="/admin/reports" element={<Navigate to="/admin/analytics" replace />} />
+            <Route path="/admin/governance" element={<AdminGovernance />} />
+          </Route>
         </Route>
 
         {/* Fallback redirect */}

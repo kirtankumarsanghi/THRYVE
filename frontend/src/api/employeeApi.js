@@ -16,3 +16,8 @@ export const getEmployeeCalendar = async (year, month) => {
   });
   return response.data;
 };
+
+export const getEmployeeFeedback = async () => {
+  const response = await axios.get("/employee/feedback");
+  return response.data;
+};

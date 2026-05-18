@@ -59,62 +59,21 @@ export default function CycleManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E]">
-      {/* Top Bar */}
-      <div className="bg-[#0F1629] border-b border-white/5 px-8 py-4">
-        <div className="flex items-center justify-between max-w-[1800px] mx-auto">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-white">Admin Console</h1>
-            <span className="text-gray-500">—</span>
-            <span className="text-gray-400">Marcus Rivers</span>
+    <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6 text-white">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-8">
+        <div>
+          <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+            <span>Admin</span>
+            <span className="text-gray-600">&gt;</span>
+            <span className="text-indigo-400">Cycle Management</span>
           </div>
-          <div className="flex items-center gap-4">
-            <button className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors">
-              • ADMIN MODE
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Bell size={20} className="text-gray-400" />
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
-              <Settings size={20} className="text-gray-400" />
-            </button>
-          </div>
+          <h2 className="text-3xl font-bold tracking-tight">Cycle Management</h2>
+          <p className="text-slate-400 mt-2 text-sm max-w-xl">
+            Configure quarterly cycle windows and performance periods.
+          </p>
         </div>
       </div>
-
-      {/* Breadcrumb */}
-      <div className="bg-[#0F1629] px-8 py-3 border-b border-white/5">
-        <div className="max-w-[1800px] mx-auto flex items-center gap-2 text-sm">
-          <Link to="/admin/dashboard" className="text-gray-400 hover:text-white transition-colors">
-            🏠
-          </Link>
-          <span className="text-gray-600">›</span>
-          <Link to="/admin" className="text-gray-400 hover:text-white transition-colors">
-            Admin
-          </Link>
-          <span className="text-gray-600">›</span>
-          <span className="text-indigo-400">Cycle Management</span>
-        </div>
-      </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8">
-        {/* Back Button */}
-        <Link 
-          to="/admin/dashboard"
-          className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-6"
-        >
-          <ArrowLeft size={16} />
-          Back to Dashboard
-        </Link>
-
-        {/* Header */}
-        <motion.div {...fade(0)} className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Calendar className="text-indigo-400" size={32} />
-            <h1 className="text-4xl font-bold text-white">Cycle Management</h1>
-          </div>
-          <p className="text-gray-400">Configure quarterly cycle windows and performance periods.</p>
-        </motion.div>
 
         {/* Live Status Indicator */}
         <motion.div {...fade(0.05)} className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 mb-6 flex items-center gap-3">
@@ -248,6 +207,7 @@ export default function CycleManagement() {
           </div>
         </motion.div>
       </div>
-    </div>
   );
 }
+
+

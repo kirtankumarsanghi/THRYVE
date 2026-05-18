@@ -74,13 +74,13 @@ export default {
                 unit: "8px"
             },
             fontFamily: {
-                "title-md": ["Geist", "sans-serif"],
-                "headline-lg": ["Geist", "sans-serif"],
-                "display-xl": ["Geist", "sans-serif"],
-                "body-sm": ["Inter", "sans-serif"],
-                "body-base": ["Inter", "sans-serif"],
-                "label-caps": ["Geist", "sans-serif"],
-                "headline-lg-mobile": ["Geist", "sans-serif"]
+                "title-md": ["Sora", "sans-serif"],
+                "headline-lg": ["Sora", "sans-serif"],
+                "display-xl": ["Sora", "sans-serif"],
+                "body-sm": ["Sora", "sans-serif"],
+                "body-base": ["Sora", "sans-serif"],
+                "label-caps": ["Sora", "sans-serif"],
+                "headline-lg-mobile": ["Sora", "sans-serif"]
             },
             fontSize: {
                 "title-md": ["20px", { lineHeight: "28px", fontWeight: "500" }],

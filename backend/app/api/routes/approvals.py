@@ -14,6 +14,8 @@ router = APIRouter()
 
 class ApprovalBody(BaseModel):
     comment: Optional[str] = ""
+    target_value: Optional[float] = None
+    weightage: Optional[float] = None
 
 
 @router.get("/pending")
@@ -62,10 +64,12 @@ def approve(
     
     return approve_goal(
         goal_id, 
-        body.comment, 
+        body.comment,
         db, 
         manager_id=current_user["user_id"],
-        manager_email=manager_email
+        manager_email=manager_email,
+        target_value=body.target_value,
+        weightage=body.weightage,
     )
 
 
@@ -88,4 +92,3 @@ def reject(
         manager_id=current_user["user_id"],
         manager_email=manager_email
     )
-

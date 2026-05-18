@@ -1,15 +1,24 @@
-import { useState, useEffect } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend, LineChart, Line } from 'recharts';
+import { useState, useEffect, useCallback } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { useAdmin } from '../../context/AdminContext';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
   Users, Building2, Target, TrendingUp, AlertCircle, Activity, 
   Shield, Clock, CheckCircle, XCircle, RefreshCw, ArrowRight,
-  BarChart3, PieChart as PieChartIcon, Settings, Bell
+  BarChart3, PieChart as PieChartIcon, Settings, Bell, UserCog
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { getSystemHealth, getDepartments } from '../../api/adminApi';
+import {
+  getSystemHealth,
+  getDepartments,
+  getQuarterlyWindows,
+  updateQuarterlyWindows,
+  runEscalationScan,
+  getEscalations,
+  updateEscalationStatus,
+} from '../../api/adminApi';
+import { getPendingApprovals, approveGoal, rejectGoal } from '../../api/approvalsApi';
 
 const STATUS_COLORS = {
   draft: '#6B7280',
@@ -28,29 +37,133 @@ const fade = (d = 0) => ({
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { departments: contextDepts, users, kpis, auditLogs, loading: contextLoading, refreshData } = useAdmin();
+  const { users, kpis, auditLogs, loading: contextLoading, refreshData, updateUserRole } = useAdmin();
   
   const [systemHealth, setSystemHealth] = useState(null);
   const [departments, setDepartments] = useState([]);
+  const [quarterlyWindows, setQuarterlyWindows] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSavingWindows, setIsSavingWindows] = useState(false);
+  const [roleUserId, setRoleUserId] = useState('');
+  const [roleValue, setRoleValue] = useState('employee');
   const [lastUpdated, setLastUpdated] = useState(new Date());
+  const [pendingItems, setPendingItems] = useState([]);
+  const [escalations, setEscalations] = useState([]);
+  const [bulkRole, setBulkRole] = useState('employee');
+  const [selectedUserIds, setSelectedUserIds] = useState([]);
+
+  const loadAdditionalData = useCallback(async () => {
+    try {
+      const [healthRes, deptRes, windowsRes, approvalsRes, escalationsRes] = await Promise.allSettled([
+        getSystemHealth(),
+        getDepartments({ include_stats: true }),
+        getQuarterlyWindows(),
+        getPendingApprovals(),
+        getEscalations('open', 20),
+      ]);
+
+      if (healthRes.status === 'fulfilled') setSystemHealth(healthRes.value);
+      if (deptRes.status === 'fulfilled') setDepartments(deptRes.value || []);
+      if (windowsRes.status === 'fulfilled') setQuarterlyWindows(windowsRes.value?.windows || []);
+      if (approvalsRes.status === 'fulfilled') setPendingItems(approvalsRes.value || []);
+      if (escalationsRes.status === 'fulfilled') setEscalations(escalationsRes.value || []);
+
+      setLastUpdated(new Date());
+
+      const failed = [healthRes, deptRes, windowsRes, approvalsRes, escalationsRes].filter((r) => r.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn(`Admin dashboard loaded with ${failed.length} partial failures`);
+      }
+    } catch (error) {
+      console.error('Failed to load additional data:', error);
+      toast.error(error?.response?.data?.detail || 'Failed to load admin dashboard data');
+    }
+  }, []);
 
   // Load additional data
   useEffect(() => {
     loadAdditionalData();
-  }, []);
+  }, [loadAdditionalData]);
 
-  const loadAdditionalData = async () => {
+  useEffect(() => {
+    const timer = setInterval(() => {
+      loadAdditionalData();
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [loadAdditionalData]);
+
+  const handleRoleUpdate = async () => {
+    if (!roleUserId) {
+      toast.error('Select a user first');
+      return;
+    }
     try {
-      const [healthData, deptData] = await Promise.all([
-        getSystemHealth(),
-        getDepartments({ include_stats: true })
-      ]);
-      setSystemHealth(healthData);
-      setDepartments(deptData);
-      setLastUpdated(new Date());
+      await updateUserRole(Number(roleUserId), roleValue);
+      await refreshData();
+      await loadAdditionalData();
     } catch (error) {
-      console.error('Failed to load additional data:', error);
+      toast.error(error?.response?.data?.detail || 'Failed to update role');
+    }
+  };
+
+  const handleWindowChange = (windowName, key, value) => {
+    setQuarterlyWindows((prev) =>
+      prev.map((window) =>
+        window.window_name === windowName ? { ...window, [key]: Number(value) } : window
+      )
+    );
+  };
+
+  const handleSaveWindows = async () => {
+    setIsSavingWindows(true);
+    try {
+      await updateQuarterlyWindows(quarterlyWindows);
+      toast.success('Quarterly windows updated');
+      await loadAdditionalData();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to update windows');
+    } finally {
+      setIsSavingWindows(false);
+    }
+  };
+
+  const toggleUserSelection = (userId) => {
+    setSelectedUserIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
+  };
+
+  const applyBulkRole = async () => {
+    if (!selectedUserIds.length) {
+      toast.error('Select at least one user');
+      return;
+    }
+    const confirmed = window.confirm(`Apply "${bulkRole}" role to ${selectedUserIds.length} users? This action will be logged in audit trail.`);
+    if (!confirmed) return;
+    try {
+      await Promise.all(selectedUserIds.map((id) => updateUserRole(id, bulkRole)));
+      setSelectedUserIds([]);
+      await refreshData();
+      await loadAdditionalData();
+      toast.success('Bulk role update applied and logged');
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Bulk role update failed');
+    }
+  };
+
+  const handleApprovalAction = async (goalId, action) => {
+    const confirmed = window.confirm(`Confirm ${action} for goal #${goalId}? This will create an audit entry.`);
+    if (!confirmed) return;
+    try {
+      if (action === 'approve') {
+        await approveGoal(goalId, 'Approved from Admin Action Center');
+        toast.success(`Goal #${goalId} approved`);
+      } else {
+        await rejectGoal(goalId, 'Rejected from Admin Action Center');
+        toast.success(`Goal #${goalId} rejected`);
+      }
+      await loadAdditionalData();
+      await refreshData();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || `Failed to ${action} goal`);
     }
   };
 
@@ -66,6 +179,26 @@ export default function AdminDashboard() {
       toast.error('Failed to refresh dashboard');
     } finally {
       setTimeout(() => setIsRefreshing(false), 1000);
+    }
+  };
+
+  const handleRunEscalations = async () => {
+    try {
+      const result = await runEscalationScan();
+      toast.success(`Escalation scan complete: ${result.created} new, ${result.touched} touched`);
+      await loadAdditionalData();
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to run escalation scan');
+    }
+  };
+
+  const handleResolveEscalation = async (escalationId) => {
+    try {
+      await updateEscalationStatus(escalationId, 'resolved');
+      setEscalations((prev) => prev.filter((e) => e.id !== escalationId));
+      toast.success(`Escalation #${escalationId} resolved`);
+    } catch (error) {
+      toast.error(error?.response?.data?.detail || 'Failed to resolve escalation');
     }
   };
 
@@ -132,48 +265,37 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0A0F1E]">
-      {/* Top Bar */}
-      <div className="bg-[#0F1629] border-b border-white/5 px-8 py-4 sticky top-0 z-40 backdrop-blur-lg bg-[#0F1629]/95">
-        <div className="flex items-center justify-between max-w-[1800px] mx-auto">
-          <div className="flex items-center gap-4">
+    <div className="max-w-[1800px] mx-auto px-8 py-8">
+      {/* Dashboard Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
             <Shield className="text-red-400" size={24} />
-            <h1 className="text-xl font-bold text-white">Admin Dashboard</h1>
-            <span className="text-gray-500">—</span>
-            <span className="text-gray-400 text-sm">System Overview</span>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right mr-4">
-              <p className="text-xs text-gray-500">Last Updated</p>
-              <p className="text-xs text-gray-400">{lastUpdated.toLocaleTimeString()}</p>
-            </div>
-            <button 
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <RefreshCw size={20} className={`text-gray-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </button>
-            <button className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded-lg text-sm font-medium hover:bg-red-500/20 transition-colors">
-              • ADMIN MODE
-            </button>
-            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors relative">
-              <Bell size={20} className="text-gray-400" />
-              {recentAuditCount > 0 && (
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              )}
-            </button>
-            <button 
-              onClick={() => navigate('/admin/governance')}
-              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
-            >
-              <Settings size={20} className="text-gray-400" />
-            </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white tracking-wide">System Overview</h1>
+            <p className="text-sm text-gray-400">Admin Action Center & Real-time Analytics</p>
           </div>
         </div>
+        
+        <div className="flex items-center gap-4">
+          <div className="text-right mr-2 hidden sm:block">
+            <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Last Updated</p>
+            <p className="text-xs text-gray-300 font-medium">{lastUpdated.toLocaleTimeString()}</p>
+          </div>
+          <button 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="p-2.5 bg-[#0F1629] border border-white/5 hover:border-white/20 rounded-xl transition-all"
+            title="Refresh Dashboard"
+          >
+            <RefreshCw size={18} className={`text-gray-400 ${isRefreshing ? 'animate-spin text-white' : ''}`} />
+          </button>
+          <button className="px-4 py-2.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded-xl text-xs font-bold tracking-widest uppercase hover:bg-red-500/20 transition-all shadow-[0_0_15px_rgba(239,68,68,0.1)]">
+            Admin Mode
+          </button>
+        </div>
       </div>
-
-      <div className="max-w-[1800px] mx-auto px-8 py-8">
         {/* Live Data Notice */}
         <motion.div {...fade(0)} className="mb-6">
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 flex items-center gap-3">
@@ -380,6 +502,143 @@ export default function AdminDashboard() {
           </motion.div>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          <motion.div {...fade(0.38)} className="bg-[#0F1629] border border-white/5 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Authority Controls</h2>
+            <p className="text-sm text-gray-400 mb-5">
+              Admin updates here immediately affect access and permissions for manager and employee experiences.
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+              <select
+                value={roleUserId}
+                onChange={(e) => setRoleUserId(e.target.value)}
+                className="bg-[#1A2235] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              >
+                <option value="">Select user</option>
+                {(users || []).map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.full_name || user.name || user.email}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={roleValue}
+                onChange={(e) => setRoleValue(e.target.value)}
+                className="bg-[#1A2235] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              >
+                <option value="employee">Employee</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
+              </select>
+              <button
+                onClick={handleRoleUpdate}
+                className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded-lg text-sm font-semibold"
+              >
+                Apply Role
+              </button>
+            </div>
+          </motion.div>
+
+          <motion.div {...fade(0.39)} className="bg-[#0F1629] border border-white/5 rounded-2xl p-6">
+            <h2 className="text-xl font-bold text-white mb-4">Quarterly Windows</h2>
+            <div className="space-y-3">
+              {quarterlyWindows.map((window) => (
+                <div key={window.window_name} className="bg-[#1A2235] border border-white/10 rounded-xl p-3">
+                  <p className="text-sm font-semibold text-white mb-2">{window.window_name}</p>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <input type="number" min="1" max="12" value={window.start_month} onChange={(e) => handleWindowChange(window.window_name, 'start_month', e.target.value)} className="bg-[#0F1629] border border-white/10 rounded px-2 py-1 text-xs text-white" />
+                    <input type="number" min="1" max="31" value={window.start_day} onChange={(e) => handleWindowChange(window.window_name, 'start_day', e.target.value)} className="bg-[#0F1629] border border-white/10 rounded px-2 py-1 text-xs text-white" />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input type="number" min="1" max="12" value={window.end_month} onChange={(e) => handleWindowChange(window.window_name, 'end_month', e.target.value)} className="bg-[#0F1629] border border-white/10 rounded px-2 py-1 text-xs text-white" />
+                    <input type="number" min="1" max="31" value={window.end_day} onChange={(e) => handleWindowChange(window.window_name, 'end_day', e.target.value)} className="bg-[#0F1629] border border-white/10 rounded px-2 py-1 text-xs text-white" />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={handleSaveWindows}
+              disabled={isSavingWindows}
+              className="mt-4 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 rounded-lg text-sm font-semibold"
+            >
+              {isSavingWindows ? 'Saving...' : 'Save Windows'}
+            </button>
+          </motion.div>
+        </div>
+
+        <motion.div {...fade(0.41)} className="bg-[#0F1629] border border-white/5 rounded-2xl p-6 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <UserCog className="text-cyan-400" size={22} />
+            <h2 className="text-xl font-bold text-white">Admin Action Center</h2>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="bg-[#1A2235] border border-white/10 rounded-xl p-4">
+              <p className="text-sm font-semibold text-white mb-3">Bulk Role Updates</p>
+              <div className="max-h-40 overflow-y-auto space-y-2 mb-3">
+                {(users || []).slice(0, 12).map((user) => (
+                  <label key={user.id} className="flex items-center gap-2 text-xs text-gray-300">
+                    <input type="checkbox" checked={selectedUserIds.includes(user.id)} onChange={() => toggleUserSelection(user.id)} />
+                    <span>{user.full_name || user.email}</span>
+                  </label>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <select value={bulkRole} onChange={(e) => setBulkRole(e.target.value)} className="flex-1 bg-[#0F1629] border border-white/10 rounded px-2 py-2 text-xs text-white">
+                  <option value="employee">Employee</option>
+                  <option value="manager">Manager</option>
+                  <option value="admin">Admin</option>
+                </select>
+                <button onClick={applyBulkRole} className="px-3 py-2 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded text-xs font-semibold">
+                  Apply
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-[#1A2235] border border-white/10 rounded-xl p-4">
+              <p className="text-sm font-semibold text-white mb-3">Approvals Queue</p>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {pendingItems.length ? pendingItems.slice(0, 5).map((item) => (
+                  <div key={item.id} className="border border-white/10 rounded-lg p-2">
+                    <p className="text-xs text-white font-medium truncate">{item.title}</p>
+                    <p className="text-[11px] text-gray-400 mb-2">{item.employee_name}</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => handleApprovalAction(item.id, 'approve')} className="px-2 py-1 text-[11px] bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">Approve</button>
+                      <button onClick={() => handleApprovalAction(item.id, 'reject')} className="px-2 py-1 text-[11px] bg-red-500/20 text-red-300 rounded border border-red-500/30">Reject</button>
+                    </div>
+                  </div>
+                )) : <p className="text-xs text-gray-500">No pending approvals.</p>}
+              </div>
+            </div>
+
+            <div className="bg-[#1A2235] border border-white/10 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-white">Escalation Log</p>
+                <button
+                  onClick={handleRunEscalations}
+                  className="px-2 py-1 text-[11px] bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded"
+                >
+                  Run Scan
+                </button>
+              </div>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {escalations.length ? escalations.slice(0, 5).map((esc) => (
+                  <div key={esc.id} className="border border-white/10 rounded-lg p-2">
+                    <p className="text-xs text-white">{esc.rule_type.replace(/_/g, ' ')}</p>
+                    <p className="text-[11px] text-amber-300">L{esc.level} {'->'} {esc.recipient_role}</p>
+                    <p className="text-[10px] text-gray-500 mb-1">{esc.message}</p>
+                    <button
+                      onClick={() => handleResolveEscalation(esc.id)}
+                      className="px-2 py-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded"
+                    >
+                      Resolve
+                    </button>
+                  </div>
+                )) : <p className="text-xs text-gray-500">No open escalations.</p>}
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Bottom Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Goal Status Distribution */}
@@ -536,24 +795,25 @@ export default function AdminDashboard() {
             <p className="text-xs text-gray-400 mt-1">View system activity</p>
           </button>
         </motion.div>
-      </div>
 
-      <style jsx>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgba(255, 255, 255, 0.02);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      `}</style>
-    </div>
+        <style>{`
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+          }
+        `}</style>
+      </div>
   );
 }
+
+

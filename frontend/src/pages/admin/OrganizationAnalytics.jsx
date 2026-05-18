@@ -282,3 +282,5 @@ function StatCard({ label, value, icon: Icon, color }) {
     </div>
   );
 }
+
+

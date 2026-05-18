@@ -248,7 +248,7 @@ export default function ExecutiveDashboard() {
               Historical
             </button>
             <button 
-              onClick={() => navigate("/employee/reports")}
+              onClick={() => navigate("/employee/analytics")}
               className="px-4 py-2 bg-indigo-500 hover:bg-indigo-400 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2"
             >
               <Download size={16} /> Export PDF

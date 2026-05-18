@@ -7,3 +7,6 @@ passlib[bcrypt]
 python-multipart
 python-dotenv
 openpyxl
+httpx
+pytest
+requests

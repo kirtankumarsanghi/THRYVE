@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from app.models.goal import Goal
 from app.models.checkin import Checkin
 from app.models.user import User
+from app.models.escalation import EscalationLog
+from app.services import audit_service
 from datetime import datetime
 
 
@@ -126,3 +128,52 @@ def build_notifications_for_user(db: Session, user_id: int, role: str, limit: in
         item.pop("_sort_at", None)
 
     return {"items": trimmed, "total": len(trimmed)}
+
+
+def send_escalation_notifications_stub(
+    db: Session,
+    escalation: EscalationLog,
+    actor_user_id: int,
+    actor_user_email: str | None = None,
+):
+    """
+    Demo-only connector stubs for escalation events.
+    Logs email/Teams payload delivery events to audit trail.
+    """
+    recipients = []
+    if escalation.recipient_emails:
+        recipients = [value.strip() for value in escalation.recipient_emails.split(",") if value.strip()]
+
+    email_payload = {
+        "channel": "email",
+        "subject": f"[Escalation L{escalation.level}] {escalation.rule_type}",
+        "to": recipients,
+        "body": escalation.message,
+        "entity": {"type": escalation.entity_type, "id": escalation.entity_id},
+    }
+    teams_payload = {
+        "channel": "teams",
+        "card_title": "Escalation Alert",
+        "recipient_role": escalation.recipient_role,
+        "message": escalation.message,
+        "deep_link": f"/admin/dashboard?escalation_id={escalation.id}",
+    }
+
+    audit_service.log_action(
+        db=db,
+        user_id=actor_user_id,
+        user_email=actor_user_email,
+        action="escalation_email_stub_sent",
+        target=f"Escalation #{escalation.id}",
+        target_id=escalation.id,
+        details=str(email_payload),
+    )
+    audit_service.log_action(
+        db=db,
+        user_id=actor_user_id,
+        user_email=actor_user_email,
+        action="escalation_teams_stub_sent",
+        target=f"Escalation #{escalation.id}",
+        target_id=escalation.id,
+        details=str(teams_payload),
+    )
