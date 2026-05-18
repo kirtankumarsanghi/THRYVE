@@ -51,12 +51,12 @@ const Reports = lazy(() => import("./pages/manager/Reports"));
 const Notifications = lazy(() => import("./pages/Notifications/Notifications"));
 
 // Admin Pages
-const AdminDashboard = lazy(() => import("./pages/Admin/AdminDashboard"));
-const GovernanceCenter = lazy(() => import("./pages/Admin/GovernanceCenter"));
-const AuditLogs = lazy(() => import("./pages/Admin/AuditLogs"));
-const UserManagement = lazy(() => import("./pages/Admin/UserManagement"));
-const CycleManagement = lazy(() => import("./pages/Admin/CycleManagement"));
-const OrganizationAnalytics = lazy(() => import("./pages/Admin/OrganizationAnalytics"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const GovernanceCenter = lazy(() => import("./pages/admin/GovernanceCenter"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const CycleManagement = lazy(() => import("./pages/admin/CycleManagement"));
+const OrganizationAnalytics = lazy(() => import("./pages/admin/OrganizationAnalytics"));
 const DepartmentManagement = lazy(() => import("./pages/admin/DepartmentManagement"));
 
 const RouteFallback = () => (
