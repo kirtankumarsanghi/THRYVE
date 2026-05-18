@@ -1,44 +1,45 @@
 import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useManager } from "../context/ManagerContext";
 import {
   Home, Users, CheckCircle2, ClipboardList, BarChart3,
   Bell, LogOut, Menu, X, ChevronRight, Target, Calendar,
   MessageSquare, Award, FileText, TrendingUp, Video
 } from "lucide-react";
 
-// In a real app this comes from context/API — mocked here
-const PENDING_COUNT = 4;
-
-const NAV_ITEMS = [
-  { label: "Dashboard",         path: "/manager/dashboard",  icon: Home },
-  { label: "My Team",           path: "/manager/team",       icon: Users },
-  {
-    label: "Pending Approvals", path: "/manager/approvals",  icon: CheckCircle2,
-    badge: PENDING_COUNT,
-  },
-  { label: "Team Goals",        path: "/manager/team-goals", icon: Target },
-  { label: "1-on-1 Meetings",   path: "/manager/one-on-ones", icon: Video },
-  { label: "Team Check-ins",    path: "/manager/checkins",   icon: ClipboardList },
-  { label: "Performance Insights", path: "/manager/insights", icon: TrendingUp },
-  { label: "Feedback & Recognition", path: "/manager/feedback", icon: Award },
-  { label: "Team Calendar",     path: "/manager/calendar",   icon: Calendar },
-  { label: "Reports & Export",  path: "/manager/reports",    icon: FileText },
-  { label: "Team Analytics",    path: "/manager/analytics",  icon: BarChart3 },
-  { label: "Notifications",     path: "/manager/notifications", icon: Bell },
-];
-
 export default function ManagerLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { pendingApprovals } = useManager();
+
+  const pendingCount = pendingApprovals?.length || 0;
+
+  const NAV_ITEMS = [
+    { label: "Dashboard",            path: "/manager/dashboard",   icon: Home },
+    { label: "My Team",              path: "/manager/team",        icon: Users },
+    {
+      label: "Pending Approvals",    path: "/manager/approvals",   icon: CheckCircle2,
+      badge: pendingCount,
+    },
+    { label: "Team Goals",           path: "/manager/team-goals",  icon: Target },
+    { label: "1-on-1 Meetings",      path: "/manager/one-on-ones", icon: Video },
+    { label: "Team Check-ins",       path: "/manager/checkins",    icon: ClipboardList },
+    { label: "Performance Insights", path: "/manager/insights",    icon: TrendingUp },
+    { label: "Feedback & Recognition", path: "/manager/feedback",  icon: Award },
+    { label: "Team Calendar",        path: "/manager/calendar",    icon: Calendar },
+    { label: "Reports & Export",     path: "/manager/reports",     icon: FileText },
+    { label: "Team Analytics",       path: "/manager/analytics",   icon: BarChart3 },
+    { label: "Notifications",        path: "/manager/notifications", icon: Bell },
+  ];
 
   const handleLogout = () => {
     logout();
     navigate("/login");
   };
 
-  const userName = user?.name || "Manager";
+  const userName = user?.full_name || user?.name || "Manager";
   const initials = userName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
 
   return (
@@ -148,10 +149,10 @@ export default function ManagerLayout() {
           </div>
 
           <div className="flex items-center gap-4 ml-auto">
-            {PENDING_COUNT > 0 && (
+            {pendingCount > 0 && (
               <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold bg-orange-500/15 text-orange-300 border border-orange-500/25">
                 <CheckCircle2 size={13} />
-                {PENDING_COUNT} Pending
+                {pendingCount} Pending
               </span>
             )}
             <span className="hidden sm:inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-widest bg-purple-500/15 text-purple-300 border border-purple-500/25">
@@ -175,4 +176,3 @@ export default function ManagerLayout() {
     </div>
   );
 }
-

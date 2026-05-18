@@ -226,3 +226,27 @@ def get_audit_logs(
 def get_recent_activity(db: Session, limit: int = 50):
     """Get recent activity across the system"""
     return db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(limit).all()
+
+
+def log_action(
+    db: Session,
+    user_id: int,
+    action: str,
+    target: str,
+    target_id: Optional[int] = None,
+    user_email: Optional[str] = None,
+    details: Optional[str] = None,
+):
+    """
+    Generic audit log helper for simple actions.
+    Wrapper around create_audit_log for convenience.
+    """
+    return create_audit_log(
+        db=db,
+        user_id=user_id,
+        action=action,
+        target=target,
+        target_id=target_id,
+        user_email=user_email,
+        details=details,
+    )

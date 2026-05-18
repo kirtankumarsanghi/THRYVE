@@ -1,11 +1,11 @@
-﻿import { useForm } from "react-hook-form";
+import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useNavigate, Navigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Lock, Mail, ArrowRight, Zap, Target, Users, Shield, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Target, Users, Shield, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { useEffect, useState } from "react";
 import { healthAuth } from "../../api/authApi";
 
 const loginSchema = z.object({
@@ -14,45 +14,14 @@ const loginSchema = z.object({
 });
 
 const DEMO_USERS = [
-  {
-    role: "employee",
-    label: "Login as Employee",
-    desc: "Goals, Check-ins, Progress",
-    icon: Target,
-    classes: {
-      btn: "bg-blue-500/10 border-blue-500/30 text-blue-300 hover:bg-blue-500/20 hover:border-blue-500/50",
-      badge: "bg-blue-500/20 text-blue-300 border-blue-500/30",
-      icon: "text-blue-400",
-    },
-  },
-  {
-    role: "manager",
-    label: "Login as Manager",
-    desc: "Approvals, Team, Analytics",
-    icon: Users,
-    classes: {
-      btn: "bg-purple-500/10 border-purple-500/30 text-purple-300 hover:bg-purple-500/20 hover:border-purple-500/50",
-      badge: "bg-purple-500/20 text-purple-300 border-purple-500/30",
-      icon: "text-purple-400",
-    },
-  },
-  {
-    role: "admin",
-    label: "Login as Admin",
-    desc: "Governance, Audit, Users",
-    icon: Shield,
-    classes: {
-      btn: "bg-red-500/10 border-red-500/30 text-red-300 hover:bg-red-500/20 hover:border-red-500/50",
-      badge: "bg-red-500/20 text-red-300 border-red-500/30",
-      icon: "text-red-400",
-    },
-  },
+  { role: "employee", label: "Employee", icon: Target },
+  { role: "manager", label: "Manager", icon: Users },
+  { role: "admin", label: "Admin", icon: Shield },
 ];
 
 export default function Login() {
   const navigate = useNavigate();
   const { login, token, role: currentRole, loading } = useAuth();
-  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState(null);
   const [apiError, setApiError] = useState("");
@@ -101,7 +70,7 @@ export default function Login() {
       const userRole = result.user?.role || "employee";
       navigate(`/${userRole}/dashboard`);
     } else {
-      setApiError(result?.error || "Login failed. Please try again.");
+      setApiError(result?.error || "Login failed. Please check your credentials.");
     }
     setIsSubmitting(false);
   };
@@ -128,211 +97,346 @@ export default function Login() {
       const userRole = result.user?.role || demo.role;
       navigate(`/${userRole}/dashboard`);
     } else {
-      setApiError(result?.error || "Demo login failed. Please try again.");
+      setApiError(result?.error || "Demo login failed.");
     }
 
     setDemoLoading(null);
   };
 
+  // Staggered animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } }
+  };
+
   return (
-    <div className="min-h-screen bg-[#060D1F] flex items-center justify-center p-4 md:p-8 relative overflow-hidden font-sans">
-      <div className="absolute top-[-15%] left-[-10%] w-[55%] h-[55%] bg-[#8B7FFF]/15 blur-[140px] rounded-full pointer-events-none animate-pulse" />
-      <div className="absolute bottom-[-15%] right-[-5%] w-[45%] h-[45%] bg-[#10B981]/10 blur-[140px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: "1.5s" }} />
-      <div className="absolute top-[40%] right-[15%] w-[25%] h-[25%] bg-blue-500/8 blur-[100px] rounded-full pointer-events-none animate-pulse" style={{ animationDelay: "3s" }} />
+    <div className="min-h-screen flex font-sans bg-[#060D1F]">
+      {/* Left Panel: Branding & Advertising */}
+      <div className="hidden lg:flex lg:w-5/12 xl:w-1/2 relative bg-[#0B132C] border-r border-white/5 flex-col justify-between overflow-hidden">
+        
+        {/* Rich Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#040814] via-[#09122C] to-[#040814] z-0" />
+        
+        {/* Animated Background Orbs */}
+        <motion.div 
+          animate={{ 
+            x: [0, 50, -50, 0],
+            y: [0, -50, 50, 0],
+          }}
+          transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+          className="absolute -top-[10%] -right-[10%] w-[60%] h-[60%] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none z-0" 
+        />
+        <motion.div 
+          animate={{ 
+            x: [0, -40, 40, 0],
+            y: [0, 40, -40, 0],
+          }}
+          transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+          className="absolute top-[40%] -left-[20%] w-[70%] h-[70%] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none z-0" 
+        />
 
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.02]"
-        style={{
-          backgroundImage: "linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)",
-          backgroundSize: "40px 40px",
-        }}
-      />
-
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className="w-full max-w-6xl relative z-10"
-      >
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-white transition-colors mb-6">
-          <ArrowLeft size={16} /> Back to Home
-        </Link>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-          <div className="rounded-[2rem] border border-white/12 bg-gradient-to-br from-[#101a3f] via-[#0b1431] to-[#091028] p-8 lg:p-10 relative overflow-hidden shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
-            <div className="absolute -top-20 -right-10 w-72 h-72 rounded-full bg-cyan-400/10 blur-3xl" />
-            <div className="absolute -bottom-20 -left-10 w-80 h-80 rounded-full bg-indigo-500/12 blur-3xl" />
-            <div className="relative">
-              <div className="inline-flex items-center gap-3 mb-8">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#8B7FFF] to-indigo-600 flex items-center justify-center shadow-[0_0_20px_rgba(139,127,255,0.45)]">
-                  <Target size={22} className="text-white" />
-                </div>
-                <span className="text-3xl font-bold tracking-[0.12em] text-white">THRYVE</span>
+        {/* Professional Isometric Dashboard Mockup */}
+        <div className="absolute right-[-15%] top-[15%] w-[90%] h-[80%] pointer-events-none z-0 perspective-[2000px]">
+          <motion.div 
+            initial={{ opacity: 0, rotateY: -15, rotateX: 10, y: 50 }}
+            animate={{ opacity: 1, rotateY: -12, rotateX: 8, y: 0 }}
+            transition={{ duration: 1.5, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="w-full h-[120%] bg-[#0B132C]/80 backdrop-blur-3xl border border-white/10 rounded-l-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
+            style={{ transformStyle: 'preserve-3d' }}
+          >
+            {/* Mock Header */}
+            <div className="h-16 border-b border-white/5 flex items-center px-8 gap-6 bg-white/[0.02]">
+              <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center">
+                <Target size={14} className="text-blue-400" />
               </div>
-
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300 mb-3">Performance Platform</p>
-              <h2 className="text-3xl font-bold text-white leading-tight mb-4">Align teams, accelerate goals, and scale execution.</h2>
-              <p className="text-slate-300 leading-relaxed max-w-md">
-                THRYVE gives your organization a single command center for strategic planning, quarterly check-ins,
-                manager approvals, and live analytics.
-              </p>
-
-              <div className="mt-10 space-y-4">
-                <Feature label="Goal lifecycle from draft to approval" />
-                <Feature label="Quarterly check-ins with progress tracking" />
-                <Feature label="Live dashboards for employee, manager, and admin" />
+              <div className="h-4 w-32 bg-white/10 rounded-full" />
+              <div className="flex-1" />
+              <div className="flex gap-4">
+                <div className="h-8 w-8 rounded-full bg-white/5" />
+                <div className="h-8 w-24 rounded-lg bg-white/10" />
               </div>
             </div>
-          </div>
 
-          <div className="bg-[#0B1437]/82 backdrop-blur-2xl border border-white/12 rounded-[2rem] shadow-[0_30px_90px_rgba(0,0,0,0.58)] overflow-hidden">
-            <div className="px-8 pt-10 pb-8 border-b border-white/10 text-center relative">
-              <div className="absolute inset-x-0 -top-1 h-1 bg-gradient-to-r from-cyan-300/30 via-violet-400/60 to-cyan-300/30" />
-              <h1 className="text-[2rem] leading-tight font-bold text-white mb-1">Welcome back</h1>
-              <p className="text-sm text-slate-400">Sign in to your enterprise workspace</p>
-            </div>
+            {/* Mock Content */}
+            <div className="flex-1 flex p-8 gap-8">
+              {/* Mock Sidebar */}
+              <div className="w-48 flex flex-col gap-4">
+                <div className="h-8 w-full bg-blue-500/10 border border-blue-500/20 rounded-lg" />
+                <div className="h-8 w-[80%] bg-white/5 rounded-lg" />
+                <div className="h-8 w-[90%] bg-white/5 rounded-lg" />
+                <div className="h-8 w-[75%] bg-white/5 rounded-lg" />
+                
+                <div className="mt-8 h-4 w-16 bg-white/10 rounded-full mb-2" />
+                <div className="h-8 w-full bg-white/5 rounded-lg" />
+                <div className="h-8 w-[85%] bg-white/5 rounded-lg" />
+              </div>
 
-            <div className="px-8 py-8 bg-gradient-to-b from-white/[0.01] to-transparent">
-              {backendStatus !== "up" && (
-                <div className="mb-4 bg-amber-500/10 border border-amber-500/30 rounded-xl px-4 py-3 text-xs text-amber-200">
-                  {backendStatus === "checking"
-                    ? "Checking backend connectivity..."
-                    : "Backend appears offline. Please start the API server (http://127.0.0.1:8000)."}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Work Email</label>
-                  <div className="relative">
-                    <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                    <input
-                      {...register("email")}
-                      type="email"
-                      autoComplete="email"
-                      placeholder="you@company.com"
-                      className={`w-full bg-white/90 border rounded-xl pl-11 pr-4 py-3 text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none transition-all ${
-                        errors.email
-                          ? "border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
-                          : "border-white/10 focus:border-[#8B7FFF]/60 focus:ring-1 focus:ring-[#8B7FFF]/20"
-                      }`}
-                    />
+              {/* Mock Main Area */}
+              <div className="flex-1 flex flex-col gap-6">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <div className="h-8 w-48 bg-white/10 rounded-lg mb-3" />
+                    <div className="h-4 w-64 bg-white/5 rounded-full" />
                   </div>
-                  <AnimatePresence>
-                    {errors.email && (
-                      <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-400 text-xs mt-1.5 ml-1">
-                        {errors.email.message}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
+                  <div className="h-10 w-32 bg-blue-500 rounded-lg opacity-80" />
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Password</label>
-                    <button type="button" className="text-xs text-[#8B7FFF] hover:text-[#8B7FFF]/80 transition-colors">Forgot password?</button>
+                {/* Mock KPI Cards */}
+                <div className="grid grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-32 bg-white/5 border border-white/5 rounded-2xl p-5 flex flex-col justify-between">
+                      <div className="flex justify-between items-start">
+                        <div className="h-4 w-16 bg-white/10 rounded-full" />
+                        <div className="h-6 w-6 rounded-full bg-white/5" />
+                      </div>
+                      <div>
+                        <div className="h-8 w-24 bg-white/20 rounded-lg mb-2" />
+                        <div className="h-3 w-12 bg-emerald-500/40 rounded-full" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Mock Chart Area */}
+                <div className="flex-1 bg-white/[0.02] border border-white/5 rounded-2xl p-6 flex flex-col">
+                  <div className="h-5 w-32 bg-white/10 rounded-lg mb-6" />
+                  <div className="flex-1 flex items-end gap-3 pb-2 border-b border-white/5">
+                    {[40, 70, 45, 90, 65, 80, 55, 75, 40, 85].map((h, i) => (
+                      <div key={i} className="flex-1 bg-gradient-to-t from-blue-500/20 to-indigo-400/40 rounded-t-sm" style={{ height: `${h}%` }} />
+                    ))}
                   </div>
-                  <div className="relative">
-                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
-                    <input
-                      {...register("password")}
-                      type={showPassword ? "text" : "password"}
-                      autoComplete="current-password"
-                      placeholder="••••••••"
-                      className={`w-full bg-white/90 border rounded-xl pl-11 pr-12 py-3 text-sm text-slate-700 placeholder:text-slate-500 focus:outline-none transition-all ${
-                        errors.password
-                          ? "border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/30"
-                          : "border-white/10 focus:border-[#8B7FFF]/60 focus:ring-1 focus:ring-[#8B7FFF]/20"
-                      }`}
-                    />
-                    <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors">
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  <AnimatePresence>
-                    {errors.password && (
-                      <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-400 text-xs mt-1.5 ml-1">
-                        {errors.password.message}
-                      </motion.p>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                <AnimatePresence>
-                  {apiError && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-3 text-sm text-red-300">
-                      {apiError}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting || backendStatus !== "up"}
-                  className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#8B7FFF] to-indigo-600 hover:from-[#8B7FFF]/90 hover:to-indigo-600/90 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl shadow-[0_10px_30px_rgba(99,102,241,0.35)] hover:shadow-[0_14px_34px_rgba(99,102,241,0.42)] transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 mt-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign In <ArrowRight size={18} />
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-            <div className="px-8 pb-8">
-              <div className="border border-dashed border-white/12 rounded-2xl p-6 bg-gradient-to-b from-white/[0.03] to-white/[0.01]">
-                <div className="flex items-center gap-2 mb-1">
-                  <Zap size={14} className="text-yellow-400" />
-                  <span className="text-xs font-bold text-yellow-400 uppercase tracking-widest">For Hackathon Demo Only</span>
-                </div>
-                <p className="text-xs text-slate-500 mb-5">Skip authentication and instantly access any role dashboard</p>
-
-                <div className="space-y-3">
-                  {DEMO_USERS.map((demo) => {
-                    const Icon = demo.icon;
-                    const isLoading = demoLoading === demo.role;
-
-                    return (
-                      <button
-                        key={demo.role}
-                        onClick={() => handleDemoLogin(demo)}
-                        disabled={demoLoading !== null || backendStatus !== "up"}
-                        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-semibold transition-all duration-200 disabled:opacity-50 hover:translate-x-0.5 ${demo.classes.btn}`}
-                      >
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${demo.classes.badge}`}>
-                          {isLoading ? <Loader2 size={16} className={`animate-spin ${demo.classes.icon}`} /> : <Icon size={16} className={demo.classes.icon} />}
-                        </div>
-                        <div className="text-left flex-1">
-                          <div>{demo.label}</div>
-                          <div className="text-[10px] font-normal opacity-60 mt-0.5">{demo.desc}</div>
-                        </div>
-                        <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full border ${demo.classes.badge}`}>{demo.role}</span>
-                      </button>
-                    );
-                  })}
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
-        <p className="text-center text-xs text-slate-600 mt-6">&copy; {new Date().getFullYear()} Thryve Enterprise · Align. Achieve. Thryve.</p>
-      </motion.div>
-    </div>
-  );
-}
+        {/* Subtle decorative grid overlay */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-[0.02] z-0"
+          style={{
+            backgroundImage: "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+            backgroundSize: "64px 64px"
+          }}
+        />
+        
+        {/* Top Navigation */}
+        <div className="relative z-10 p-8 xl:p-12">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-white transition-colors group">
+            <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+            <span>Back to main site</span>
+          </Link>
+        </div>
 
-function Feature({ label }) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="w-2 h-2 rounded-full bg-cyan-300 mt-2" />
-      <p className="text-slate-300 text-sm">{label}</p>
+        {/* Branding Content */}
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="relative z-10 px-8 xl:px-12 2xl:px-16 pb-16 xl:pb-24 w-full max-w-2xl"
+        >
+          <motion.div variants={itemVariants} className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#030712] border border-white/10 mb-8 shadow-2xl relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-indigo-600/20 rounded-2xl blur-md" />
+            <Target size={28} className="text-blue-400 relative z-10" />
+          </motion.div>
+          
+          <motion.h1 variants={itemVariants} className="text-[3rem] xl:text-[4rem] font-bold text-white tracking-tight leading-[1.05] mb-6 drop-shadow-2xl">
+            Strategic clarity.<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">Perfect execution.</span>
+          </motion.h1>
+          
+          <motion.p variants={itemVariants} className="text-lg xl:text-xl text-slate-400 leading-relaxed mb-12 max-w-xl font-medium">
+            Join thousands of teams using THRYVE's enterprise platform to align their goals, track KPIs, and accelerate growth.
+          </motion.p>
+
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-x-8 gap-y-6">
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 size={18} className="text-blue-400" />
+                <span className="text-slate-200 font-semibold text-[15px]">OKRs & Goals</span>
+              </div>
+              <p className="text-sm text-slate-500 ml-7 leading-relaxed">Align every team member with company-wide strategic objectives.</p>
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <Zap size={18} className="text-indigo-400" />
+                <span className="text-slate-200 font-semibold text-[15px]">Real-time Analytics</span>
+              </div>
+              <p className="text-sm text-slate-500 ml-7 leading-relaxed">Instantly identify bottlenecks with intelligent KPI dashboards.</p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <Users size={18} className="text-purple-400" />
+                <span className="text-slate-200 font-semibold text-[15px]">Multi-tier Roles</span>
+              </div>
+              <p className="text-sm text-slate-500 ml-7 leading-relaxed">Built for employees, managers, and executives to collaborate.</p>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <Shield size={18} className="text-emerald-400" />
+                <span className="text-slate-200 font-semibold text-[15px]">Enterprise Security</span>
+              </div>
+              <p className="text-sm text-slate-500 ml-7 leading-relaxed">Bank-grade encryption, SSO integration, and full audit logs.</p>
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
+
+      {/* Right Panel: Auth Form */}
+      <div className="flex-1 flex items-center justify-center relative p-6 bg-[#030712] lg:bg-transparent shadow-[-20px_0_50px_rgba(0,0,0,0.5)] z-20">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }}
+          className="w-full max-w-[420px] relative z-10"
+        >
+          {/* Mobile Only Logo */}
+          <div className="lg:hidden mb-10 text-center flex flex-col items-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 border border-white/20 mb-4 shadow-xl">
+              <Target size={24} className="text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white tracking-tight mb-2">THRYVE</h1>
+          </div>
+
+          <div className="mb-8">
+            <h2 className="text-[1.75rem] font-bold text-white tracking-tight mb-2">Sign in</h2>
+            <p className="text-slate-400 font-medium">Enter your credentials to continue to your workspace.</p>
+          </div>
+
+          <div className="bg-[#0B132C]/80 border border-white/[0.08] rounded-3xl p-7 shadow-[0_0_40px_rgba(0,0,0,0.3)] backdrop-blur-2xl relative overflow-hidden">
+            {/* Subtle inner highlight */}
+            <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+
+            {backendStatus !== "up" && (
+              <div className="mb-6 flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
+                <Zap size={18} className="text-amber-400 mt-0.5 shrink-0" />
+                <p className="text-[13px] text-amber-200/90 leading-relaxed font-medium">
+                  {backendStatus === "checking"
+                    ? "Checking backend connectivity..."
+                    : "Backend is offline. Please start the API server on port 8000."}
+                </p>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+              <div>
+                <label className="block text-[13px] font-semibold text-slate-300 mb-2">Email Address</label>
+                <input
+                  {...register("email")}
+                  type="email"
+                  autoComplete="email"
+                  placeholder="you@company.com"
+                  className={`w-full bg-[#030712]/50 border rounded-xl px-4 py-3 text-[15px] text-white placeholder:text-slate-600 focus:outline-none transition-all shadow-inner ${
+                    errors.email
+                      ? "border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                      : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:bg-[#030712]/80"
+                  }`}
+                />
+                <AnimatePresence>
+                  {errors.email && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-400 text-xs font-medium mt-2">
+                      {errors.email.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-[13px] font-semibold text-slate-300">Password</label>
+                  <button type="button" className="text-[13px] font-medium text-blue-400 hover:text-blue-300 transition-colors">Forgot?</button>
+                </div>
+                <input
+                  {...register("password")}
+                  type="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  className={`w-full bg-[#030712]/50 border rounded-xl px-4 py-3 text-[15px] text-white placeholder:text-slate-600 focus:outline-none transition-all shadow-inner ${
+                    errors.password
+                      ? "border-red-500/50 focus:border-red-500 focus:ring-1 focus:ring-red-500/20"
+                      : "border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:bg-[#030712]/80"
+                  }`}
+                />
+                <AnimatePresence>
+                  {errors.password && (
+                    <motion.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="text-red-400 text-xs font-medium mt-2">
+                      {errors.password.message}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              <AnimatePresence>
+                {apiError && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-[13px] font-medium text-red-400">
+                    {apiError}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <button
+                type="submit"
+                disabled={isSubmitting || backendStatus !== "up"}
+                className="w-full flex items-center justify-center gap-2 bg-white text-black hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed font-semibold py-3.5 rounded-xl transition-all mt-4 text-[15px] shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.2)] active:scale-[0.98]"
+              >
+                {isSubmitting ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>Continue <ArrowRight size={16} /></>
+                )}
+              </button>
+            </form>
+
+            <div className="mt-8 pt-8 border-t border-white/5">
+              <div className="flex items-center gap-2 mb-5 justify-center">
+                <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Demo Access</span>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                {DEMO_USERS.map((demo) => {
+                  const isLoading = demoLoading === demo.role;
+                  return (
+                    <button
+                      key={demo.role}
+                      onClick={() => handleDemoLogin(demo)}
+                      disabled={demoLoading !== null || backendStatus !== "up"}
+                      className="group flex flex-col items-center justify-center gap-2.5 bg-black/20 hover:bg-black/40 border border-white/[0.05] hover:border-white/10 rounded-xl p-3 transition-all disabled:opacity-50"
+                    >
+                      {isLoading ? (
+                        <Loader2 size={18} className="animate-spin text-slate-400" />
+                      ) : (
+                        <demo.icon size={18} className="text-slate-400 group-hover:text-white transition-colors" />
+                      )}
+                      <span className="text-[11px] font-semibold text-slate-300 group-hover:text-white transition-colors tracking-wide">{demo.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center gap-2 mt-8">
+            <p className="text-center text-sm text-slate-500 font-medium">&copy; {new Date().getFullYear()} Thryve Enterprise.</p>
+            <div className="flex gap-4 text-xs text-slate-600">
+              <a href="#" className="hover:text-slate-400 transition-colors">Privacy Policy</a>
+              <a href="#" className="hover:text-slate-400 transition-colors">Terms of Service</a>
+            </div>
+          </div>
+        </motion.div>
+      </div>
     </div>
   );
 }

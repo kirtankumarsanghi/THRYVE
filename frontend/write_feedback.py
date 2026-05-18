@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from "react";
+import os
+
+content = """import React, { useState, useEffect } from "react";
 import { MessageSquare, ThumbsUp, Star, TrendingUp, AlertCircle, Award } from "lucide-react";
-import { getTeamAnalytics } from "../../api/analyticsApi";
+import { getAnalyticsData } from "../../api/analyticsApi";
 
 export default function EmployeeFeedbackHistory() {
   const [loading, setLoading] = useState(true);
@@ -181,3 +183,7 @@ export default function EmployeeFeedbackHistory() {
     </div>
   );
 }
+"""
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\employee\FeedbackHistory.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

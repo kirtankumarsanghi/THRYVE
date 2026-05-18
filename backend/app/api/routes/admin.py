@@ -5,8 +5,9 @@ Provides admin-only features for system management
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import io
 
 from app.core.database import get_db
@@ -14,6 +15,8 @@ from app.core.dependencies import get_current_user
 from app.models.goal import Goal
 from app.models.user import User
 from app.models.quarterly_window import QuarterlyWindow
+from app.models.department import Department
+from app.schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentResponse, DepartmentWithStats
 from app.services import audit_service, analytics_service
 from app.utils import csv_export
 from app.utils.quarterly_windows import WINDOW_CONFIG, validate_no_window_overlap
@@ -589,3 +592,300 @@ def update_quarterly_windows(
     db.commit()
 
     return {"message": "Quarterly windows updated successfully", "count": len(body.windows)}
+
+
+# ═══════════════════════════════════════════════════════════════
+# DEPARTMENT MANAGEMENT ENDPOINTS
+# ═══════════════════════════════════════════════════════════════
+
+@router.get("/departments", response_model=List[DepartmentWithStats])
+def get_departments(
+    include_stats: bool = Query(True, description="Include analytics statistics"),
+    status: Optional[str] = Query(None, description="Filter by status (active/inactive)"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Get all departments with optional analytics statistics.
+    
+    Query params:
+        - include_stats: Include employee count and performance metrics
+        - status: Filter by department status
+    
+    Returns:
+        List of departments with optional statistics
+    
+    Access: Admin only
+    """
+    query = db.query(Department)
+    
+    if status:
+        query = query.filter(Department.status == status)
+    
+    departments = query.order_by(Department.name).all()
+    
+    if not include_stats:
+        return [dept.to_dict() for dept in departments]
+    
+    # Add statistics for each department
+    result = []
+    for dept in departments:
+        dept_dict = dept.to_dict()
+        
+        # Count employees in this department
+        employee_count = db.query(User).filter(User.department == dept.name).count()
+        
+        # Get goal statistics
+        dept_goals = db.query(Goal).join(User).filter(User.department == dept.name).all()
+        total_goals = len(dept_goals)
+        completed_goals = sum(1 for g in dept_goals if g.status == "completed")
+        
+        # Calculate average performance
+        if dept_goals:
+            avg_performance = sum(
+                (g.achieved_value / g.target_value * 100) if g.target_value > 0 else 0
+                for g in dept_goals
+            ) / len(dept_goals)
+        else:
+            avg_performance = 0.0
+        
+        completion_rate = (completed_goals / total_goals * 100) if total_goals > 0 else 0.0
+        
+        dept_dict.update({
+            "employee_count": employee_count,
+            "total_goals": total_goals,
+            "completed_goals": completed_goals,
+            "avg_performance": round(avg_performance, 2),
+            "completion_rate": round(completion_rate, 2),
+        })
+        
+        result.append(dept_dict)
+    
+    return result
+
+
+@router.get("/departments/{department_id}", response_model=DepartmentResponse)
+def get_department(
+    department_id: int,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Get a specific department by ID.
+    
+    Access: Admin only
+    """
+    department = db.query(Department).filter(Department.id == department_id).first()
+    
+    if not department:
+        raise HTTPException(status_code=404, detail="Department not found")
+    
+    return department
+
+
+@router.post("/departments", response_model=DepartmentResponse, status_code=201)
+def create_department(
+    department: DepartmentCreate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Create a new department.
+    
+    Body:
+        - name: Department name (required, unique)
+        - code: Department code (required, unique)
+        - description: Department description (optional)
+        - manager_name: Manager name (optional)
+        - manager_email: Manager email (optional)
+        - budget: Department budget (optional)
+        - location: Department location (optional)
+        - status: Department status (default: active)
+    
+    Access: Admin only
+    """
+    # Check if department name already exists
+    existing_name = db.query(Department).filter(Department.name == department.name).first()
+    if existing_name:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Department with name '{department.name}' already exists"
+        )
+    
+    # Check if department code already exists
+    existing_code = db.query(Department).filter(Department.code == department.code).first()
+    if existing_code:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Department with code '{department.code}' already exists"
+        )
+    
+    # Create new department
+    new_department = Department(**department.model_dump())
+    db.add(new_department)
+    db.commit()
+    db.refresh(new_department)
+    
+    # Get admin user for audit log
+    admin = db.query(User).filter(User.id == current_user["user_id"]).first()
+    admin_email = admin.email if admin else None
+    
+    # Create audit log
+    audit_service.log_action(
+        db=db,
+        user_id=current_user["user_id"],
+        action="department_created",
+        target="department",
+        target_id=new_department.id,
+        user_email=admin_email,
+        details=f"Created department: {new_department.name} ({new_department.code})"
+    )
+    
+    return new_department
+
+
+@router.put("/departments/{department_id}", response_model=DepartmentResponse)
+def update_department(
+    department_id: int,
+    department_update: DepartmentUpdate,
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Update an existing department.
+    
+    Body: All fields are optional
+        - name: Department name
+        - code: Department code
+        - description: Department description
+        - manager_name: Manager name
+        - manager_email: Manager email
+        - budget: Department budget
+        - location: Department location
+        - status: Department status
+    
+    Access: Admin only
+    """
+    department = db.query(Department).filter(Department.id == department_id).first()
+    
+    if not department:
+        raise HTTPException(status_code=404, detail="Department not found")
+    
+    # Track changes for audit log
+    changes = []
+    
+    # Update fields if provided
+    update_data = department_update.model_dump(exclude_unset=True)
+    
+    # Check for unique constraints if name or code is being updated
+    if "name" in update_data and update_data["name"] != department.name:
+        existing = db.query(Department).filter(
+            Department.name == update_data["name"],
+            Department.id != department_id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Department with name '{update_data['name']}' already exists"
+            )
+        changes.append(f"name: {department.name} → {update_data['name']}")
+    
+    if "code" in update_data and update_data["code"] != department.code:
+        existing = db.query(Department).filter(
+            Department.code == update_data["code"],
+            Department.id != department_id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Department with code '{update_data['code']}' already exists"
+            )
+        changes.append(f"code: {department.code} → {update_data['code']}")
+    
+    # Apply updates
+    for field, value in update_data.items():
+        if field not in ["name", "code"]:  # Already tracked above
+            old_value = getattr(department, field)
+            if old_value != value:
+                changes.append(f"{field}: {old_value} → {value}")
+        setattr(department, field, value)
+    
+    db.commit()
+    db.refresh(department)
+    
+    # Get admin user for audit log
+    admin = db.query(User).filter(User.id == current_user["user_id"]).first()
+    admin_email = admin.email if admin else None
+    
+    # Create audit log
+    if changes:
+        audit_service.log_action(
+            db=db,
+            user_id=current_user["user_id"],
+            action="department_updated",
+            target="department",
+            target_id=department_id,
+            user_email=admin_email,
+            details=f"Updated department {department.name}: {', '.join(changes)}"
+        )
+    
+    return department
+
+
+@router.delete("/departments/{department_id}")
+def delete_department(
+    department_id: int,
+    force: bool = Query(False, description="Force delete even if employees are assigned"),
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_admin),
+):
+    """
+    Delete a department.
+    
+    Query params:
+        - force: Force delete even if employees are assigned to this department
+    
+    Access: Admin only
+    """
+    department = db.query(Department).filter(Department.id == department_id).first()
+    
+    if not department:
+        raise HTTPException(status_code=404, detail="Department not found")
+    
+    # Check if any employees are assigned to this department
+    employee_count = db.query(User).filter(User.department == department.name).count()
+    
+    if employee_count > 0 and not force:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot delete department with {employee_count} assigned employees. Use force=true to override."
+        )
+    
+    dept_name = department.name
+    dept_code = department.code
+    
+    # Delete the department
+    db.delete(department)
+    db.commit()
+    
+    # Get admin user for audit log
+    admin = db.query(User).filter(User.id == current_user["user_id"]).first()
+    admin_email = admin.email if admin else None
+    
+    # Create audit log
+    audit_service.log_action(
+        db=db,
+        user_id=current_user["user_id"],
+        action="department_deleted",
+        target="department",
+        target_id=department_id,
+        user_email=admin_email,
+        details=f"Deleted department: {dept_name} ({dept_code}), {employee_count} employees affected"
+    )
+    
+    return {
+        "message": "Department deleted successfully",
+        "department_id": department_id,
+        "name": dept_name,
+        "employees_affected": employee_count
+    }

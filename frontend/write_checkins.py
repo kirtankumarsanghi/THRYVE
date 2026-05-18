@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import os
+
+content = """import React, { useState, useEffect } from "react";
 import { CheckCircle, Clock, Search, ChevronRight, FileText, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import { getPendingApprovals } from "../../api/approvalsApi";
@@ -154,3 +156,7 @@ export default function EmployeeQuarterlyReview() {
     </div>
   );
 }
+"""
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\employee\QuarterlyReview.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

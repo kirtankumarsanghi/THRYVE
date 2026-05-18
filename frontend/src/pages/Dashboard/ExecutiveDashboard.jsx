@@ -110,7 +110,7 @@ function QuickAction({ icon: Icon, label, onClick }) {
   );
 }
 
-export default function Dashboard() {
+export default function ExecutiveDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { goals = [], loading: goalsLoading } = useGoals();
@@ -264,7 +264,7 @@ export default function Dashboard() {
             title="AVG OUTPUT SCORE" 
             value={avgOutputScore}
             suffix="/5.0"
-            trend="↑ 12.4% vs last month"
+            trend="+12.4% vs last month"
             trendUp={true}
             icon={TrendingUp}
           />

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import os
+
+content = """import React, { useState, useEffect } from "react";
 import { CheckCircle, XCircle, Clock, Search, Filter, MessageSquare, AlertTriangle } from "lucide-react";
 import { getPendingApprovals, approveRequest, rejectRequest } from "../../api/approvalsApi";
 import { motion, AnimatePresence } from "framer-motion";
@@ -179,3 +181,7 @@ export default function ManagerApprovals() {
     </div>
   );
 }
+"""
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\manager\ManagerApprovals.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import os
+
+calendar_content = """import React, { useState, useEffect } from "react";
 import { Calendar as CalendarIcon, Clock, Video, Users, ChevronLeft, ChevronRight, CheckCircle } from "lucide-react";
 import { getEmployeeCalendar } from "../../api/employeeApi";
 
@@ -147,3 +149,10 @@ export default function Calendar() {
     </div>
   );
 }
+"""
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\employee\MyCalendar.jsx", "w", encoding="utf-8") as f:
+    f.write(calendar_content)
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\manager\TeamCalendar.jsx", "w", encoding="utf-8") as f:
+    f.write(calendar_content.replace("My Calendar", "Team Calendar").replace("MyCalendar", "TeamCalendar"))

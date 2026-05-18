@@ -1,125 +1,226 @@
-import { useEffect, useMemo, useState } from "react";
-import { Plus, Users, Send } from "lucide-react";
-import { getEmployees } from "../../api/usersApi";
-import { createSharedGoal } from "../../api/goalsApi";
+import React, { useState, useEffect } from "react";
+import { Target, Search, Plus, ChevronRight, Filter, CheckCircle2, Clock, AlertCircle, Bell, HelpCircle, RefreshCw } from "lucide-react";
+import { getGoals } from "../../api/goalsApi";
+import { useManager } from "../../context/ManagerContext";
+import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import LiveDataNotice from "../../components/common/LiveDataNotice";
+
+const fade = (d = 0) => ({ initial: { opacity: 0, y: 12 }, animate: { opacity: 1, y: 0 }, transition: { delay: d } });
 
 export default function TeamGoals() {
-  const [employees, setEmployees] = useState([]);
-  const [selectedIds, setSelectedIds] = useState([]);
-  const [form, setForm] = useState({
-    title: "",
-    description: "",
-    strategic_area: "",
-    target_value: 0,
-    uom_type: "Numeric",
-    uom_direction: "Higher is Better",
-    target_date: "",
-    quarter: "Q1",
-    default_weightage: 10,
-  });
-  const [loading, setLoading] = useState(false);
+  const { team, refreshData } = useManager();
+  const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
+  const [search, setSearch] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    const load = async () => {
-      const data = await getEmployees();
-      setEmployees(data || []);
-    };
-    load();
-  }, []);
-
-  const selectableEmployees = useMemo(
-    () => employees.filter((e) => e.status === "active"),
-    [employees]
-  );
-
-  const toggleRecipient = (id) => {
-    setSelectedIds((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    if (selectedIds.length === 0) {
-      alert("Select at least one employee");
-      return;
-    }
-    setLoading(true);
+  const loadGoals = async () => {
     try {
-      await createSharedGoal({
-        ...form,
-        target_value: Number(form.target_value || 0),
-        default_weightage: Number(form.default_weightage || 10),
-        target_date: form.target_date || null,
-        recipient_ids: selectedIds,
-      });
-      alert("Shared goal created successfully");
-      setSelectedIds([]);
-      setForm((s) => ({ ...s, title: "", description: "" }));
+      const res = await getGoals();
+      setGoals(res || []);
     } catch (err) {
-      alert(err?.response?.data?.detail || "Failed to create shared goal");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
+  useEffect(() => {
+    loadGoals();
+  }, []);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await Promise.all([refreshData(), loadGoals()]);
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
+
+  // Build a name lookup from team data
+  const nameMap = {};
+  team.forEach(m => { nameMap[m.employee_id] = m.employee_name; });
+
+  const filtered = goals.filter(g => {
+    const matchFilter = filter === "all"
+      || (filter === "approved" && g.approval_status === "approved")
+      || (filter === "pending" && g.approval_status === "pending")
+      || (filter === "rejected" && g.approval_status === "rejected");
+    const matchSearch = !search || g.title?.toLowerCase().includes(search.toLowerCase()) || g.description?.toLowerCase().includes(search.toLowerCase());
+    return matchFilter && matchSearch;
+  });
+
+  const statusIcon = (s) => {
+    if (s === "approved") return { Icon: CheckCircle2, cls: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
+    if (s === "rejected") return { Icon: AlertCircle, cls: "bg-red-500/10 text-red-400 border-red-500/20" };
+    return { Icon: Clock, cls: "bg-amber-500/10 text-amber-400 border-amber-500/20" };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Shared Team Goals</h1>
-        <p className="text-sm text-gray-400">Push departmental KPIs to multiple employees.</p>
+    <div className="min-h-screen bg-[#040914]">
+      {/* Top Navigation Bar */}
+      <div className="border-b border-white/5 bg-[#0B132C]/50 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-[1800px] mx-auto px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-8">
+            <h1 className="text-xl font-bold text-white">Thryve.</h1>
+            <div className="flex items-center gap-2 text-sm text-slate-400">
+              <Link to="/manager/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+              <ChevronRight size={14} />
+              <span className="text-indigo-400">Team Goals</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">SYSTEM LIVE</span>
+            </div>
+            <button 
+              onClick={handleRefresh}
+              className="p-2 hover:bg-white/5 rounded-lg transition-colors"
+              disabled={isRefreshing}
+            >
+              <RefreshCw size={20} className={`text-slate-400 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </button>
+            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+              <Bell size={20} className="text-slate-400" />
+            </button>
+            <button className="p-2 hover:bg-white/5 rounded-lg transition-colors">
+              <HelpCircle size={20} className="text-slate-400" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      <form onSubmit={onSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white/5 border border-white/10 rounded-2xl p-5 space-y-4">
+      <div className="max-w-[1800px] mx-auto px-8 py-8 space-y-6">
+        {/* Header */}
+        <motion.div {...fade(0)} className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
-            <label className="text-sm text-gray-300">Title</label>
-            <input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="w-full mt-1 bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white" required />
+            <h1 className="text-3xl font-bold text-white tracking-tight mb-1">Team Goals</h1>
+            <p className="text-sm text-gray-500">Track and manage OKRs across your team. {goals.length} total goals.</p>
           </div>
-          <div>
-            <label className="text-sm text-gray-300">Description</label>
-            <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="w-full mt-1 bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white" rows={3} />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <input placeholder="Strategic Area" value={form.strategic_area} onChange={(e) => setForm({ ...form, strategic_area: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white" />
-            <select value={form.quarter} onChange={(e) => setForm({ ...form, quarter: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white">
-              <option value="Q1">Q1</option><option value="Q2">Q2</option><option value="Q3">Q3</option><option value="Q4">Q4</option>
-            </select>
-            <input type="number" step="0.01" placeholder="Target value" value={form.target_value} onChange={(e) => setForm({ ...form, target_value: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white" />
-            <input type="number" placeholder="Default weightage" value={form.default_weightage} onChange={(e) => setForm({ ...form, default_weightage: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white" />
-            <select value={form.uom_type} onChange={(e) => setForm({ ...form, uom_type: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white">
-              <option value="Numeric">Numeric</option><option value="Percentage">Percentage</option><option value="Timeline">Timeline</option><option value="Zero-based">Zero-based</option>
-            </select>
-            <select value={form.uom_direction} onChange={(e) => setForm({ ...form, uom_direction: e.target.value })} className="bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white">
-              <option value="Higher is Better">Higher is Better</option><option value="Lower is Better">Lower is Better</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-sm text-gray-300">Target date (optional)</label>
-            <input type="date" value={form.target_date} onChange={(e) => setForm({ ...form, target_date: e.target.value })} className="w-full mt-1 bg-[#060D1F] border border-white/10 rounded-lg p-2.5 text-white [color-scheme:dark]" />
-          </div>
+          <Link 
+            to="/manager/dashboard"
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium rounded-xl transition-colors border border-white/5"
+          >
+            Back to Dashboard
+          </Link>
+        </motion.div>
 
-          <button type="submit" disabled={loading} className="w-full flex items-center justify-center gap-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg py-2.5">
-            <Send size={16} /> {loading ? "Pushing..." : "Push Shared Goal"}
-          </button>
-        </div>
+        <LiveDataNotice source="Goals API" hint="Real-time goal data from all team members" />
 
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-5">
-          <h3 className="text-white font-semibold flex items-center gap-2 mb-3"><Users size={18} /> Recipients ({selectedIds.length})</h3>
-          <div className="space-y-2 max-h-[480px] overflow-y-auto">
-            {selectableEmployees.map((emp) => (
-              <label key={emp.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-white/5 cursor-pointer">
-                <input type="checkbox" checked={selectedIds.includes(emp.id)} onChange={() => toggleRecipient(emp.id)} />
-                <div>
-                  <p className="text-sm text-white">{emp.full_name}</p>
-                  <p className="text-xs text-gray-400">{emp.email}</p>
-                </div>
-              </label>
+        {/* Filters */}
+        <motion.div {...fade(0.1)} className="flex flex-col sm:flex-row gap-4">
+          <div className="flex gap-1 p-1 bg-[#0B132C] backdrop-blur-xl border border-white/[0.06] rounded-xl overflow-x-auto">
+            {[
+              { key: "all", label: "All" },
+              { key: "pending", label: "Pending" },
+              { key: "approved", label: "Approved" },
+              { key: "rejected", label: "Rejected" },
+            ].map(f => (
+              <button
+                key={f.key}
+                onClick={() => setFilter(f.key)}
+                className={`px-5 py-2 text-sm font-bold rounded-lg transition-all whitespace-nowrap ${
+                  filter === f.key
+                    ? "bg-indigo-500/15 text-indigo-300 border border-indigo-500/25"
+                    : "text-gray-500 hover:text-white hover:bg-white/5 border border-transparent"
+                }`}
+              >
+                {f.label}
+              </button>
             ))}
           </div>
-          <button type="button" onClick={() => setSelectedIds(selectableEmployees.map((e) => e.id))} className="mt-3 w-full border border-white/20 text-white rounded-lg py-2 text-sm flex items-center justify-center gap-2">
-            <Plus size={14} /> Select All Active Employees
-          </button>
-        </div>
-      </form>
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search goals..."
+              className="w-full h-full min-h-[44px] bg-[#0B132C] backdrop-blur-xl border border-white/[0.06] rounded-xl pl-11 pr-4 text-sm font-medium text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500/40 transition-colors"
+            />
+          </div>
+        </motion.div>
+
+        {/* Goals Grid */}
+        {filtered.length === 0 ? (
+          <motion.div {...fade(0.2)} className="bg-[#0B132C] backdrop-blur-xl border border-white/[0.06] rounded-2xl p-12 text-center">
+            <Target size={32} className="mx-auto mb-3 text-gray-600" />
+            <p className="text-gray-400 font-medium">No goals match your filters.</p>
+            {(filter !== "all" || search) && (
+              <button 
+                onClick={() => { setFilter("all"); setSearch(""); }}
+                className="mt-4 text-sm text-indigo-400 hover:text-indigo-300 font-medium"
+              >
+                Clear filters
+              </button>
+            )}
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            {filtered.map((goal, idx) => {
+              const { Icon, cls } = statusIcon(goal.approval_status);
+              const owner = nameMap[goal.employee_id] || "Unknown";
+              const initials = owner.split(" ").map(n => n[0]).join("");
+
+              return (
+                <motion.div
+                  key={goal.id}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.03 }}
+                  className="bg-[#0B132C] backdrop-blur-xl border border-white/[0.06] p-5 rounded-2xl hover:border-indigo-500/20 transition-all group"
+                >
+                  <div className="flex justify-between items-start mb-3">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider rounded border ${cls}`}>
+                      <Icon size={10} />
+                      {goal.approval_status || "pending"}
+                    </span>
+                    <span className="text-[10px] text-gray-600 font-bold">{goal.quarter}</span>
+                  </div>
+
+                  <h3 className="text-sm font-bold text-white mb-1.5 group-hover:text-indigo-300 transition-colors leading-tight">{goal.title}</h3>
+                  <p className="text-xs text-gray-500 mb-5 line-clamp-2">{goal.description}</p>
+
+                  <div className="space-y-1.5 mb-4">
+                    <div className="flex justify-between text-[10px] font-bold">
+                      <span className="text-gray-500 uppercase tracking-wider">Progress</span>
+                      <span className="text-white">{goal.progress || 0}%</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-black/40 border border-white/5 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${(goal.progress || 0) < 40 ? "bg-amber-500" : "bg-gradient-to-r from-indigo-500 to-purple-500"}`}
+                        style={{ width: `${goal.progress || 0}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/5 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-[9px] font-bold text-white">
+                        {initials}
+                      </div>
+                      <span className="text-[11px] font-medium text-gray-400 truncate max-w-[120px]">{owner}</span>
+                    </div>
+                    <span className="text-[10px] text-gray-600 font-bold">W{goal.weightage || 0}%</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

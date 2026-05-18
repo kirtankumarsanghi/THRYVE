@@ -160,3 +160,61 @@ export const downloadCSV = (blob, filename) => {
   document.body.removeChild(link);
   window.URL.revokeObjectURL(url);
 };
+
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENT MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Get all departments with optional statistics
+ * @param {Object} params - Query parameters (include_stats, status)
+ * @returns {Promise} Array of departments
+ */
+export const getDepartments = async (params = {}) => {
+  const response = await axios.get('/admin/departments', { params });
+  return response.data;
+};
+
+/**
+ * Get a specific department by ID
+ * @param {number} departmentId - Department ID
+ * @returns {Promise} Department data
+ */
+export const getDepartment = async (departmentId) => {
+  const response = await axios.get(`/admin/departments/${departmentId}`);
+  return response.data;
+};
+
+/**
+ * Create a new department
+ * @param {Object} departmentData - Department data
+ * @returns {Promise} Created department
+ */
+export const createDepartment = async (departmentData) => {
+  const response = await axios.post('/admin/departments', departmentData);
+  return response.data;
+};
+
+/**
+ * Update an existing department
+ * @param {number} departmentId - Department ID
+ * @param {Object} departmentData - Updated department data
+ * @returns {Promise} Updated department
+ */
+export const updateDepartment = async (departmentId, departmentData) => {
+  const response = await axios.put(`/admin/departments/${departmentId}`, departmentData);
+  return response.data;
+};
+
+/**
+ * Delete a department
+ * @param {number} departmentId - Department ID
+ * @param {boolean} force - Force delete even if employees are assigned
+ * @returns {Promise} Delete result
+ */
+export const deleteDepartment = async (departmentId, force = false) => {
+  const response = await axios.delete(`/admin/departments/${departmentId}`, {
+    params: { force }
+  });
+  return response.data;
+};

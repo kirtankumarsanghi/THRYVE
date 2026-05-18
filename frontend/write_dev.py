@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import os
+
+content = """import React, { useState, useEffect } from "react";
 import { Activity, Target, Briefcase, Award, TrendingUp, ChevronRight, Zap, BookOpen } from "lucide-react";
 import { getEmployeeDevelopment } from "../../api/employeeApi";
 
@@ -229,3 +231,7 @@ export default function EmployeeDevelopment() {
     </div>
   );
 }
+"""
+
+with open(r"d:\Kirtan Folder\thryve\frontend\src\pages\employee\MyDevelopment.jsx", "w", encoding="utf-8") as f:
+    f.write(content)

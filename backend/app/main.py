@@ -12,6 +12,7 @@ from app.models.goal import Goal  # noqa: F401
 from app.models.checkin import Checkin  # noqa: F401
 from app.models.audit import AuditLog  # noqa: F401
 from app.models.quarterly_window import QuarterlyWindow  # noqa: F401
+from app.models.department import Department  # noqa: F401
 from app.utils.quarterly_windows import WINDOW_CONFIG
 
 # Create tables
