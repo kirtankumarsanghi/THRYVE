@@ -177,9 +177,18 @@ def ensure_legacy_schema_columns():
 
 @app.on_event("startup")
 def startup_bootstrap():
-    ensure_legacy_schema_columns()
-    ensure_demo_users()
-    ensure_default_quarterly_windows()
+    """
+    Startup tasks - run schema migrations if possible
+    If database connection fails, application will still start
+    Use /seed/seed-database endpoint to initialize data after deployment
+    """
+    try:
+        ensure_legacy_schema_columns()
+    except Exception as e:
+        # Don't crash on startup - database might not be ready yet
+        print(f"⚠️  Startup bootstrap skipped: {e}")
+        print("✅ Application started successfully")
+        print("📝 Use /seed/seed-database endpoint to initialize database")
 
 
 @app.get("/")

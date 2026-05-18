@@ -7,7 +7,9 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.models.department import Department
+from app.models.quarterly_window import QuarterlyWindow
 from app.core.security import hash_password
+from datetime import datetime, timedelta
 import os
 
 router = APIRouter()
@@ -139,11 +141,43 @@ async def seed_database(
         
         db.commit()
         
+        # Create default quarterly windows for current and next 3 years
+        current_year = datetime.now().year
+        quarters_created = 0
+        
+        for year_offset in range(4):  # Current year + 3 future years
+            year = current_year + year_offset
+            quarters = [
+                {"quarter": "Q1", "start_month": 1, "end_month": 3},
+                {"quarter": "Q2", "start_month": 4, "end_month": 6},
+                {"quarter": "Q3", "start_month": 7, "end_month": 9},
+                {"quarter": "Q4", "start_month": 10, "end_month": 12},
+            ]
+            
+            for q in quarters:
+                start_date = datetime(year, q["start_month"], 1)
+                # Last day of end month
+                if q["end_month"] == 12:
+                    end_date = datetime(year, 12, 31)
+                else:
+                    end_date = datetime(year, q["end_month"] + 1, 1) - timedelta(days=1)
+                
+                window = QuarterlyWindow(
+                    name=f"{q['quarter']} {year}",
+                    start_date=start_date,
+                    end_date=end_date
+                )
+                db.add(window)
+                quarters_created += 1
+        
+        db.commit()
+        
         return {
             "status": "success",
             "message": "Database seeded successfully",
             "departments_created": len(departments),
             "users_created": len(users_created),
+            "quarterly_windows_created": quarters_created,
             "demo_credentials": {
                 "admin": {"email": "admin@thryve.com", "password": "admin123"},
                 "manager": {"email": "manager@thryve.com", "password": "manager123"},
