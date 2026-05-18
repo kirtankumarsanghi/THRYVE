@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.user import User
 from app.models.department import Department
-from app.core.security import get_password_hash
+from app.core.security import hash_password
 import os
 
 router = APIRouter()
@@ -132,7 +132,7 @@ async def seed_database(
             password = user_data.pop("password")
             user = User(
                 **user_data,
-                password=get_password_hash(password)
+                password=hash_password(password)
             )
             db.add(user)
             users_created.append(user_data["email"])
