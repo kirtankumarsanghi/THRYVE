@@ -1,103 +1,151 @@
-# 🎯 THRYVE - Enterprise Goal Management Platform
+# THRYVE - Enterprise Goal Management Platform
 
-> **Align. Achieve. Thryve.**
+THRYVE is a full-stack workforce goal management system designed to demonstrate production-style architecture, role-based workflows, and analytics-driven decision support in a hackathon setting.
 
-A full-stack, enterprise-grade workforce goal management and analytics platform built with React and FastAPI.
+The platform helps organizations move from static goal setting to active execution management by combining:
+- Goal planning and ownership
+- Approval and governance workflows
+- Progress tracking and check-ins
+- Role-specific dashboards
+- Compliance and audit visibility
 
-![Status](https://img.shields.io/badge/status-production--ready-success)
-![Phase](https://img.shields.io/badge/phase-5%20complete-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+## Problem Statement
 
----
+In many teams, goals are documented in spreadsheets or disconnected tools. This creates common issues:
+- No single source of truth for current goal status
+- Slow and inconsistent manager approvals
+- Limited accountability across departments
+- Poor visibility into organization-wide performance trends
+- Weak auditability of who changed what and when
 
-## 🌟 Overview
+THRYVE addresses these issues with a unified platform and clear role-based responsibilities.
 
-Thryve is a comprehensive goal management system that enables organizations to:
-- Set and track quarterly goals
-- Manage approval workflows
-- Monitor team performance
-- Generate real-time analytics
-- Maintain audit compliance
-- Export reports
+## Solution Overview
 
-Built for **hackathons** and **production** use.
+THRYVE provides three integrated user experiences:
+- Employee workspace for creating and tracking goals
+- Manager workspace for reviews, approvals, and team performance
+- Admin workspace for governance, user oversight, and organization analytics
 
----
+Every major action is backed by authenticated API calls and persisted in the backend database, enabling end-to-end traceability.
 
-## ✨ Key Features
+## Key Features
 
-### 🎯 Goal Management
-- Create, update, and track goals
-- Quarterly goal cycles (Q1-Q4)
-- Strategic area alignment
-- Weightage validation (max 100%)
-- Multiple UOM types (Min, Max, Timeline, Zero)
-- Goal locking after approval
+## 1) Authentication and Access Control
+- JWT-based authentication for secure session management
+- Role-based authorization (`employee`, `manager`, `admin`)
+- Route protection in frontend and role checks in backend
+- Token-aware API client with centralized request handling
 
-### 👥 Multi-Role System
-- **Employee**: Create goals, submit check-ins, view analytics
-- **Manager**: Approve/reject goals, view team performance
-- **Admin**: System governance, audit logs, user management
+## 2) Goal Lifecycle Management
+- Goal creation with structured metadata
+- Goal updates and progress management
+- Check-in support for periodic progress reporting
+- Status-aware flow from creation to approval outcomes
+- Historical visibility through audit-related endpoints
 
-### 📊 Real-Time Analytics
+## 3) Manager Approval Workflow
+- Queue of pending goal approvals
+- Approve/reject actions tied to specific goals
+- Team-level visibility on progress and completion posture
+- Faster review loop between individual contributors and leadership
+
+## 4) Admin Governance and Operations
+- Department management (create, read, update, delete)
+- User and organization-level oversight
+- Governance actions (including goal unlock controls)
+- System health visibility and admin audit views
+
+## 5) Analytics and Reporting
 - Organization overview metrics
-- Team performance dashboards
-- Department comparisons
-- Quarterly trend analysis
-- Employee rankings (leaderboard)
-- Strategic area breakdown
+- Team and department-level analytics
+- Trend-oriented summaries for progress and completion
+- Dashboard views for fast decision-making during demos
 
-### 🔒 Enterprise Features
-- JWT authentication
-- Role-based access control
-- Complete audit logging
-- Admin governance (goal unlocking)
-- CSV export capabilities
-- System health monitoring
-- **🆕 Department management (full CRUD)**
-- **🆕 Redesigned admin dashboard with live data**
-- **🆕 Interactive data visualizations**
-- **🆕 Real-time system monitoring**
+## Role-Based User Flows
 
-### 📋 Compliance & Audit
-- Track every action
-- Complete audit trail
-- Goal history tracking
-- User activity logs
-- Compliance-ready reports
+## Employee Flow
+1. Login using employee credentials.
+2. Create goals aligned with role/team expectations.
+3. Submit updates through check-ins.
+4. Track progress and status from dashboard views.
 
----
+## Manager Flow
+1. Login using manager credentials.
+2. Review submitted goals from team members.
+3. Approve/reject goals with governance context.
+4. Monitor team performance metrics.
 
-## 🚀 Deployment
+## Admin Flow
+1. Login using admin credentials.
+2. Manage departments and oversight controls.
+3. Review organization metrics and audit signals.
+4. Perform governance operations when exceptions arise.
 
-### Quick Deploy (15 minutes)
-Deploy your app for **FREE** using Render + Vercel:
+## Technology Stack
 
-1. **Read**: [QUICK_DEPLOY.md](./QUICK_DEPLOY.md) ⭐ Start here!
-2. **Follow**: Step-by-step instructions
-3. **Result**: Live app in 15 minutes
+## Frontend
+- React 18
+- Vite
+- React Router
+- Axios
+- Tailwind CSS
+- Recharts
 
-### Comprehensive Guide
-For detailed deployment options and troubleshooting:
-- **[DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md)** - Complete guide with 3 options
-- **[DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)** - Step-by-step checklist
-- **[DEPLOYMENT_SUMMARY.md](./DEPLOYMENT_SUMMARY.md)** - Overview and comparison
+## Backend
+- FastAPI
+- SQLAlchemy
+- Pydantic
+- JWT (`python-jose`)
+- SQLite for local development (with production migration path)
 
-### Deployment Options
-1. **Render + Vercel** (Recommended, Free)
-2. **Railway + Vercel** ($5/month, Faster)
-3. **Heroku + Vercel** (Traditional, $7+/month)
+## Architecture and Data Flow
 
----
+1. User authenticates through the React frontend.
+2. Frontend sends credential request to FastAPI (`/auth/login`).
+3. Backend validates user and returns JWT token + user profile.
+4. Frontend stores token and sends it in subsequent API requests.
+5. Role-based pages load data via protected endpoints.
+6. Business actions (goal create/update/approve) persist in DB.
+7. Analytics endpoints aggregate and return dashboard metrics.
 
-## 🚀 Quick Start
+## Project Structure
 
-### Prerequisites
+```text
+thryve/
++-- backend/
+�   +-- app/
+�   �   +-- api/routes/      # HTTP endpoints by domain
+�   �   +-- core/            # Config, DB session, security
+�   �   +-- models/          # SQLAlchemy models
+�   �   +-- schemas/         # Pydantic request/response schemas
+�   �   +-- services/        # Business logic layer
+�   �   +-- utils/           # Shared helpers/utilities
+�   +-- seed_demo_data.py    # Demo user/data seed script
+�   +-- seed_departments.py  # Department seeding utility
+�   +-- requirements.txt
+�   +-- requirements-prod.txt
++-- frontend/
+�   +-- src/
+�   �   +-- api/             # API client and endpoint wrappers
+�   �   +-- components/       # Reusable UI units
+�   �   +-- context/          # Auth and app state contexts
+�   �   +-- layouts/          # Role-specific layout shells
+�   �   +-- pages/            # Screen-level pages
+�   +-- package.json
+�   +-- vite.config.js
+�   +-- vercel.json
++-- README.md
+```
+
+## Local Development Setup
+
+## Prerequisites
 - Python 3.8+
 - Node.js 16+
 - pip and npm
 
-### 1. Backend Setup
+## Step 1: Start Backend
 
 ```bash
 cd backend
@@ -106,9 +154,11 @@ python seed_demo_data.py
 python -m uvicorn app.main:app --reload
 ```
 
-Backend runs on: `http://127.0.0.1:8000`
+Backend URLs:
+- API root: `http://127.0.0.1:8000`
+- Swagger docs: `http://127.0.0.1:8000/docs`
 
-### 2. Frontend Setup
+## Step 2: Start Frontend
 
 ```bash
 cd frontend
@@ -116,403 +166,106 @@ npm install
 npm run dev
 ```
 
-Frontend runs on: `http://localhost:5173`
+Frontend URL:
+- `http://localhost:5173`
 
-### 3. Login
+## Demo Credentials
 
-**Demo Credentials:**
 - Employee: `employee@thryve.com` / `employee123`
 - Manager: `manager@thryve.com` / `manager123`
 - Admin: `admin@thryve.com` / `admin123`
 
----
+## API Reference Snapshot
 
-## 📚 Documentation
+## Authentication
+- `POST /auth/login`
+- `POST /auth/register`
+- `GET /auth/me`
 
-### Core Documentation
-- **[Quick Start Guide](./QUICK_START.md)** - Get running in 5 minutes
-- **[Phase 4 Complete](./PHASE_4_COMPLETE.md)** - Analytics & Audit features
-- **[Phase 5 Complete](./PHASE_5_COMPLETE.md)** - Frontend-Backend integration
-- **[API Reference](./API_REFERENCE_PHASE4.md)** - Complete API documentation
-- **[Implementation Guide](./PHASE_4_IMPLEMENTATION_GUIDE.md)** - Code examples
+## Goals
+- `GET /goals`
+- `POST /goals`
+- `PUT /goals/{id}`
+- `GET /goals/{id}`
 
-### 🆕 Admin Features Documentation
-- **[Admin Section Summary](./ADMIN_SECTION_SUMMARY.md)** ⭐ - Start here for admin features
-- **[Admin Features Complete](./ADMIN_FEATURES_COMPLETE.md)** - Complete implementation details
-- **[Department Management](./DEPARTMENT_MANAGEMENT_FEATURE.md)** - CRUD operations guide
-- **[Dashboard Upgrade](./ADMIN_DASHBOARD_UPGRADE.md)** - Redesigned dashboard details
-- **[Dashboard Comparison](./ADMIN_DASHBOARD_COMPARISON.md)** - Before/After comparison
-- **[Dashboard Quick Start](./ADMIN_DASHBOARD_QUICKSTART.md)** - Testing guide
+## Approvals
+- `GET /approvals/pending`
+- `PUT /approvals/{id}/approve`
+- `PUT /approvals/{id}/reject`
 
----
+## Analytics
+- `GET /analytics/overview`
+- `GET /analytics/team`
+- `GET /analytics/departments`
+- `GET /analytics/trends`
 
-## 🏗️ Architecture
+## Admin
+- `GET /admin/system-health`
+- `GET /admin/audit-logs`
+- `PUT /admin/goals/{id}/unlock`
+- `GET /admin/departments`
+- `POST /admin/departments`
+- `PUT /admin/departments/{id}`
+- `DELETE /admin/departments/{id}`
 
-### Tech Stack
+## Testing
 
-**Backend:**
-- FastAPI (Python web framework)
-- SQLAlchemy (ORM)
-- SQLite (Database)
-- JWT (Authentication)
-- Pydantic (Validation)
+Available backend test scripts include:
+- `test_auth.py`
+- `test_goals.py`
+- `test_departments.py`
+- `test_full_system.py`
+- `test_phase4.py`
 
-**Frontend:**
-- React 18
-- Vite (Build tool)
-- React Router (Routing)
-- Axios (HTTP client)
-- Tailwind CSS (Styling)
-- Recharts (Charts)
-- React Hot Toast (Notifications)
+Example run:
 
-### System Architecture
-
-```
-┌─────────────────┐
-│  React Frontend │
-│   (Port 5173)   │
-└────────┬────────┘
-         │ HTTP/REST
-         │ JWT Auth
-┌────────▼────────┐
-│  FastAPI Backend│
-│   (Port 8000)   │
-└────────┬────────┘
-         │ SQLAlchemy
-┌────────▼────────┐
-│ SQLite Database │
-│   (thryve.db)   │
-└─────────────────┘
-```
-
----
-
-## 📊 Database Schema
-
-### Core Tables
-
-**users**
-- User authentication and profile
-- Roles: employee, manager, admin
-- Department assignment
-
-**goals**
-- Goal details and targets
-- Approval workflow state
-- Progress tracking
-- Locking mechanism
-
-**checkins**
-- Quarterly progress updates
-- Achievement tracking
-- Status management
-
-**audit_logs**
-- Complete action history
-- Compliance tracking
-- User activity logs
-
----
-
-## 🎯 User Flows
-
-### Employee Flow
-1. Login → Dashboard
-2. Create Goal → Submit for Approval
-3. Wait for Manager Approval
-4. Submit Quarterly Check-ins
-5. Track Progress
-6. View Analytics
-
-### Manager Flow
-1. Login → Dashboard
-2. View Pending Approvals
-3. Review Goal Details
-4. Approve/Reject Goals
-5. Monitor Team Performance
-6. View Team Analytics
-
-### Admin Flow
-1. Login → **Redesigned Dashboard** 🆕
-2. View **System Health & Live Metrics** 🆕
-3. **Manage Departments (CRUD)** 🆕
-4. Manage Users & Roles
-5. Unlock Goals (Governance)
-6. View **Real-time Audit Logs** 🆕
-7. **Interactive Analytics & Charts** 🆕
-8. Export Reports
-
----
-
-## 🔐 Security Features
-
-- **Authentication**: JWT tokens with expiration
-- **Authorization**: Role-based access control
-- **Password Security**: Bcrypt hashing
-- **Input Validation**: Pydantic schemas
-- **SQL Injection**: SQLAlchemy ORM protection
-- **CORS**: Configured for development/production
-- **Audit Logging**: Complete action tracking
-
----
-
-## 📈 Analytics Features
-
-### Organization Metrics
-- Total goals, completed goals, pending goals
-- Average progress, completion rate
-- Employee and department counts
-
-### Team Analytics
-- Individual employee performance
-- Quarterly breakdown per employee
-- Completion rate rankings
-- Department comparisons
-
-### Trends & Insights
-- Quarterly trend analysis (Q1-Q4)
-- Strategic area distribution
-- Approval pipeline health
-- Goal status distribution
-
----
-
-## 🛠️ API Endpoints
-
-### Authentication
-- `POST /auth/login` - User login
-- `POST /auth/register` - User registration
-- `GET /auth/me` - Current user
-
-### Goals
-- `GET /goals` - List user goals
-- `POST /goals` - Create goal
-- `PUT /goals/{id}` - Update goal
-- `GET /goals/{id}` - Get goal details
-
-### Approvals
-- `GET /approvals/pending` - Pending approvals
-- `PUT /approvals/{id}/approve` - Approve goal
-- `PUT /approvals/{id}/reject` - Reject goal
-
-### Analytics
-- `GET /analytics/overview` - Organization metrics
-- `GET /analytics/team` - Team performance
-- `GET /analytics/departments` - Department analytics
-- `GET /analytics/trends` - Quarterly trends
-
-### Admin
-- `PUT /admin/goals/{id}/unlock` - Unlock goal
-- `GET /admin/audit-logs` - Audit logs
-- `GET /admin/system-health` - System health
-- `GET /admin/export/*` - CSV exports
-- **🆕 `GET /admin/departments`** - List departments with stats
-- **🆕 `POST /admin/departments`** - Create department
-- **🆕 `PUT /admin/departments/{id}`** - Update department
-- **🆕 `DELETE /admin/departments/{id}`** - Delete department
-- **🆕 `GET /admin/org-analytics`** - Comprehensive analytics
-
-**Full API docs:** `http://127.0.0.1:8000/docs` (Swagger UI)
-
----
-
-## 🧪 Testing
-
-### Backend Tests
 ```bash
 cd backend
 python test_phase4.py
 ```
 
-### Manual Testing
-1. Run seed script to create demo data
-2. Test each user role (employee, manager, admin)
-3. Verify all CRUD operations
-4. Check audit logs are created
-5. Test analytics calculations
-6. Verify CSV exports
+## Deployment Guidance
 
----
+THRYVE is built for split deployment:
+- Frontend: Vercel (static build)
+- Backend: Render, Railway, or other Python hosting
 
-## 📦 Project Structure
+Critical frontend environment variable:
+- `VITE_API_URL=<your-backend-base-url>`
 
-```
-thryve/
-├── backend/
-│   ├── app/
-│   │   ├── api/routes/      # API endpoints
-│   │   ├── core/            # Config, security, database
-│   │   ├── models/          # Database models
-│   │   ├── schemas/         # Pydantic schemas
-│   │   ├── services/        # Business logic
-│   │   └── utils/           # Utilities
-│   ├── seed_demo_data.py    # Demo data seeder
-│   ├── test_phase4.py       # Backend tests
-│   └── requirements.txt     # Python dependencies
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/            # API integration layer
-│   │   ├── components/     # React components
-│   │   ├── context/        # React contexts
-│   │   ├── pages/          # Page components
-│   │   ├── layouts/        # Layout components
-│   │   └── routes/         # Route configuration
-│   ├── .env                # Environment variables
-│   └── package.json        # Node dependencies
-│
-└── docs/
-    ├── QUICK_START.md
-    ├── PHASE_4_COMPLETE.md
-    ├── PHASE_5_COMPLETE.md
-    └── API_REFERENCE_PHASE4.md
-```
+Recommended production checks:
+1. Confirm backend CORS includes frontend domain.
+2. Verify all auth and protected routes function after deploy.
+3. Ensure frontend SPA routing fallback is enabled in host config.
+4. Validate demo credentials in production database.
 
----
+## Hackathon Evaluation Notes
 
-## 🎨 Screenshots
+This project is suitable for judging across multiple dimensions:
 
-### Dashboard
-Real-time metrics and analytics
+- Product thinking: clear problem-solution fit
+- Technical depth: full-stack integration with auth and RBAC
+- Engineering quality: modular backend services and organized frontend layers
+- Demo readiness: role-switchable workflows and visible analytics impact
 
-### Goals Management
-Create, track, and manage goals
+Suggested live demo sequence:
+1. Employee creates/updates a goal.
+2. Manager reviews and approves from pending queue.
+3. Admin verifies governance/analytics and department controls.
+4. Show API docs and endpoint-backed data consistency.
 
-### Approval Workflow
-Manager approval interface
+## Limitations and Future Improvements
 
-### Analytics
-Team performance and trends
+Current baseline:
+- SQLite for local development convenience
+- Demo-seeded credentials for evaluator onboarding
 
-### Admin Governance
-System management and audit logs
+Planned production hardening:
+- PostgreSQL as primary production DB
+- Extended test automation and CI checks
+- Observability enhancements (structured logs/metrics)
+- Optional SSO and enterprise identity integration
 
----
+## License
 
-## 🚀 Deployment
-
-### Backend (Production)
-1. Switch to PostgreSQL
-2. Set environment variables
-3. Configure CORS for production domain
-4. Use production ASGI server (Gunicorn + Uvicorn)
-5. Set up SSL/TLS
-
-### Frontend (Production)
-1. Build production bundle: `npm run build`
-2. Deploy to CDN or static hosting
-3. Update API URL in environment
-4. Configure proper CORS
-
-### Recommended Platforms
-- **Backend**: Railway, Render, AWS, Heroku
-- **Frontend**: Vercel, Netlify, AWS S3 + CloudFront
-- **Database**: PostgreSQL on Railway, AWS RDS
-
----
-
-## 🤝 Contributing
-
-This is a hackathon/demo project. Feel free to:
-- Fork and modify
-- Use as learning material
-- Build upon for your projects
-- Submit issues and PRs
-
----
-
-## 📄 License
-
-MIT License - feel free to use for any purpose
-
----
-
-## 🏆 Achievements
-
-### Phase 4: Analytics & Audit ✅
-- Real-time analytics engine
-- Complete audit logging system
-- Admin governance controls
-- CSV export capabilities
-
-### Phase 5: Full Integration ✅
-- Frontend-Backend integration
-- Real authentication system
-- Live database connection
-- Production-ready architecture
-
----
-
-## 🎯 Use Cases
-
-- **Startups**: Track team OKRs and goals
-- **Enterprises**: Workforce performance management
-- **Hackathons**: Showcase full-stack skills
-- **Learning**: Study modern web architecture
-- **Portfolio**: Demonstrate enterprise development
-
----
-
-## 📞 Support
-
-### Documentation
-- Quick Start Guide
-- API Reference
-- Implementation Guide
-- Phase Completion Docs
-
-### Common Issues
-See `QUICK_START.md` troubleshooting section
-
----
-
-## 🌟 Features Highlight
-
-✅ Real JWT Authentication  
-✅ Role-Based Access Control  
-✅ Real-Time Analytics  
-✅ Complete Audit Trail  
-✅ Admin Governance  
-✅ CSV Export System  
-✅ Approval Workflows  
-✅ Progress Tracking  
-✅ Team Management  
-✅ System Health Monitoring  
-✅ **🆕 Department Management (Full CRUD)**  
-✅ **🆕 Modern Admin Dashboard**  
-✅ **🆕 Interactive Charts & Visualizations**  
-✅ **🆕 Live Data Monitoring**  
-✅ **🆕 Real-time Activity Feed**  
-
----
-
-## 🎉 Status
-
-**Phase 5 Complete** - Production Ready
-
-This is a fully functional, enterprise-grade application ready for:
-- Demo presentations
-- Hackathon submissions
-- Portfolio showcases
-- Production deployment (with minor config)
-
----
-
-## 🚀 Get Started Now
-
-```bash
-# Clone the repo
-git clone <your-repo-url>
-
-# Follow Quick Start Guide
-See QUICK_START.md
-
-# Start building!
-```
-
----
-
-**Built with ❤️ for enterprise goal management**
-
-*Align. Achieve. Thryve.*
+MIT

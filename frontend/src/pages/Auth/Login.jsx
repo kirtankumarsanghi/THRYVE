@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, ArrowLeft, Target, Users, Shield, Zap, CheckCircle2, ArrowRight } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { healthAuth } from "../../api/authApi";
-import { API_BASE_URL } from "../../api/axios";
 import ThryveLogo from "../../components/branding/ThryveLogo";
 
 const loginSchema = z.object({
@@ -310,14 +309,10 @@ export default function Login() {
             {/* Subtle inner highlight */}
             <div className="absolute top-0 inset-x-0 h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
 
-            {backendStatus !== "up" && (
-              <div className="mb-6 flex items-start gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                <Zap size={18} className="text-amber-400 mt-0.5 shrink-0" />
-                <p className="text-[13px] text-amber-200/90 leading-relaxed font-medium">
-                  {backendStatus === "checking"
-                    ? "Checking backend connectivity..."
-                    : `Backend may be waking up or unreachable at ${API_BASE_URL}. You can still try signing in.`}
-                </p>
+            {backendStatus === "checking" && (
+              <div className="mb-5 flex items-center gap-2 text-slate-400 text-xs font-medium">
+                <Zap size={14} className="text-blue-400" />
+                <span>Preparing secure connection...</span>
               </div>
             )}
 
@@ -391,6 +386,12 @@ export default function Login() {
             </form>
 
             <div className="mt-8 pt-8 border-t border-white/5">
+              {backendStatus === "down" && (
+                <div className="mb-5 flex items-center justify-center gap-2 text-[11px] text-slate-500 font-medium">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-400/80" />
+                  <span>Server is warming up. Sign in may take a few extra seconds.</span>
+                </div>
+              )}
               <div className="flex items-center gap-2 mb-5 justify-center">
                 <span className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.2em]">Demo Access</span>
               </div>
