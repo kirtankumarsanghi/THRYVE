@@ -22,41 +22,66 @@ sqlalchemy.exc.OperationalError: (psycopg2.OperationalError) SSL error: decrypti
 ### Step 1: Commit and Push Changes
 ```bash
 git add .
-git commit -m "Fix PostgreSQL SSL connection for Render deployment"
+git commit -m "Fix PostgreSQL SSL connection and add seed endpoint for Render"
 git push origin main
 ```
 
-### Step 2: Verify Render Configuration
+### Step 2: Configure Environment Variables on Render
 
-Go to your Render dashboard and check:
+Go to your Render dashboard and add these environment variables:
 
-1. **Environment Variables**
-   - `DATABASE_URL` should be set automatically by Render PostgreSQL
-   - `SECRET_KEY` should be set to a secure random string
-   - `ENVIRONMENT` should be set to `production`
+1. **Required Variables**:
+   - `DATABASE_URL` - (Auto-set by Render PostgreSQL)
+   - `SECRET_KEY` - Set to a secure random string (for JWT tokens)
+   - `SEED_SECRET` - Set to a secure random string (for database seeding)
+   - `ENVIRONMENT` - Set to `production`
 
-2. **Build Command** (should be):
+2. **How to add**:
+   - Render Dashboard → Your Service → Environment
+   - Click "Add Environment Variable"
+   - Enter key and value
+   - Click "Save Changes"
+
+### Step 3: Verify Build Configuration
+
+Check these settings in Render:
+
+1. **Build Command**:
    ```bash
    pip install -r requirements-prod.txt
    ```
 
-3. **Start Command** (should be):
+2. **Start Command**:
    ```bash
    gunicorn app.main:app --workers 4 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
    ```
 
-### Step 3: Manual Redeploy (if needed)
-If Render doesn't auto-deploy:
-1. Go to your Render dashboard
-2. Click on your web service
-3. Click "Manual Deploy" → "Deploy latest commit"
+### Step 4: Wait for Deployment
 
-### Step 4: Check Logs
-After deployment:
+After pushing, Render will automatically deploy. Monitor the logs:
 1. Go to Render dashboard → Your service → Logs
-2. Look for:
-   - ✅ "Application startup complete"
-   - ❌ Any error messages
+2. Wait for: "Application startup complete"
+
+### Step 5: Seed the Database
+
+**Important**: Render free tier doesn't support shell access, so we use an API endpoint instead.
+
+See **[SEED_WITHOUT_SHELL.md](./SEED_WITHOUT_SHELL.md)** for detailed instructions.
+
+**Quick method**:
+```bash
+# Check if seeding is needed
+curl https://thryve-5pie.onrender.com/seed/seed-status
+
+# Seed the database (replace YOUR_SEED_SECRET with your actual secret)
+curl -X POST https://thryve-5pie.onrender.com/seed/seed-database \
+  -H "X-Seed-Secret: YOUR_SEED_SECRET"
+```
+
+After seeding, you can login with:
+- **Admin**: admin@thryve.com / admin123
+- **Manager**: manager@thryve.com / manager123
+- **Employee**: employee@thryve.com / employee123
 
 ## Alternative: If SSL Error Persists
 
