@@ -16,6 +16,7 @@ from app.models.audit import AuditLog  # noqa: F401
 from app.models.quarterly_window import QuarterlyWindow  # noqa: F401
 from app.models.department import Department  # noqa: F401
 from app.models.escalation import EscalationLog  # noqa: F401
+from app.models.meeting import ManagerMeeting  # noqa: F401
 from app.utils.quarterly_windows import WINDOW_CONFIG
 
 app = FastAPI(title="THRYVE API", version="1.0.0")
