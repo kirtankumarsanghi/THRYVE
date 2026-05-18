@@ -131,6 +131,11 @@ def ensure_default_quarterly_windows():
 
 def ensure_legacy_schema_columns():
     """Add missing columns for legacy SQLite tables if missing."""
+    # This migration path is only for legacy SQLite local databases.
+    # Render production uses PostgreSQL, where PRAGMA statements are invalid.
+    if engine.dialect.name != "sqlite":
+        return
+
     with engine.begin() as conn:
         goal_columns = conn.execute(text("PRAGMA table_info(goals)")).fetchall()
         goal_column_names = {row[1] for row in goal_columns}
