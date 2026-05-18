@@ -60,9 +60,10 @@ API.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      // Redirect to login if not already there
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+      // Avoid hard navigation to /login (can 404 on static hosts without SPA rewrite).
+      // Send users to root; client routing will take them to login as needed.
+      if (window.location.pathname !== '/') {
+        window.location.assign('/');
       }
     }
     
