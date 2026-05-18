@@ -4,8 +4,26 @@
  */
 import axios from 'axios';
 
-// Base API URL - update this for production
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+// Smart API URL detection
+const getApiUrl = () => {
+  // 1. Check environment variable (set in Vercel/build time)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // 2. Auto-detect production environment
+  const hostname = window.location.hostname;
+  if (hostname.includes('vercel.app') || hostname.includes('thryve')) {
+    return 'https://thryve-5pie.onrender.com';
+  }
+  
+  // 3. Default to localhost for development
+  return 'http://127.0.0.1:8000';
+};
+
+const BASE_URL = getApiUrl();
+
+console.log('🔗 API URL:', BASE_URL);
 
 // Create axios instance with default config
 const API = axios.create({
